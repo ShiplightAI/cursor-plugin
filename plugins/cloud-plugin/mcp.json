@@ -1,7 +1,0 @@
-{
-  "mcpServers": {
-    "cloud": {
-      "url": "https://api.shiplight.ai/mcp"
-    }
-  }
-}

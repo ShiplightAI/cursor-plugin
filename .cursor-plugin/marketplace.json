@@ -13,7 +13,7 @@
     {
       "name": "cloud-plugin",
       "source": "plugins/cloud-plugin",
-      "description": "Adds a /shiplight-cloud skill for cloud test case management — create, run, and manage tests via Shiplight API"
+      "description": "Adds a /shiplight skill for cloud test case management — create, run, and manage tests via Shiplight API"
     }
   ]
 }
