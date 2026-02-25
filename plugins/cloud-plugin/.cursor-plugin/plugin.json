@@ -1,14 +1,14 @@
 {
   "name": "shiplight-cloud",
-  "description": "Adds a /shiplight skill for cloud test case management — create, run, and manage tests via Shiplight API",
+  "displayName": "Shiplight Cloud",
   "version": "1.0.0",
-  "author": "Shiplight AI",
+  "description": "Adds a /shiplight skill for cloud test case management — create, run, and manage tests via Shiplight API",
+  "author": {
+    "name": "Shiplight AI"
+  },
   "homepage": "https://www.shiplight.ai",
   "repository": "https://github.com/ShiplightAI/cursor-plugin",
+  "license": "MIT",
   "keywords": ["testing", "cloud", "api", "test-management", "automation"],
-  "mcpServers": {
-    "cloud": {
-      "url": "https://api.shiplight.ai/mcp"
-    }
-  }
+  "category": "testing"
 }

@@ -19,22 +19,21 @@ Cloud test case management via REST API.
 
 ## Install
 
-```bash
-# Add the marketplace (one-time)
-/plugin marketplace add ShiplightAI/cursor-plugin
+In Cursor chat, run:
 
-# Install the free plugin (browser MCP tools + verify skill)
-/plugin install mcp-plugin@shiplight-plugins
+```
+/add-plugin ShiplightAI/cursor-plugin mcp-plugin
+```
 
-# Install the cloud plugin (requires API token)
-/plugin install cloud-plugin@shiplight-plugins
+```
+/add-plugin ShiplightAI/cursor-plugin cloud-plugin
 ```
 
 After installation, restart Cursor for the plugins to take effect.
 
 ## Verify
 
-After installing, go to **Cursor Settings > MCP** to confirm the Shiplight MCP servers are registered.
+After installing, go to **Cursor Settings** (Cmd+Shift+J) → **MCP** to confirm the Shiplight MCP servers are registered.
 
 ## Links
 

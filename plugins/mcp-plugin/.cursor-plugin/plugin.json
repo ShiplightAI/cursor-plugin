@@ -1,18 +1,14 @@
 {
   "name": "shiplight-mcp",
-  "description": "Adds a /verify skill for browser testing and local test verification",
+  "displayName": "Shiplight MCP",
   "version": "1.0.0",
-  "author": "Shiplight AI",
+  "description": "Adds a /verify skill for browser testing and local test verification",
+  "author": {
+    "name": "Shiplight AI"
+  },
   "homepage": "https://www.shiplight.ai",
   "repository": "https://github.com/ShiplightAI/cursor-plugin",
+  "license": "MIT",
   "keywords": ["testing", "browser", "mcp", "automation", "verification"],
-  "mcpServers": {
-    "browser": {
-      "command": "npx",
-      "args": ["-y", "@shiplightai/mcp@latest"],
-      "env": {
-        "PWDEBUG": "console"
-      }
-    }
-  }
+  "category": "testing"
 }
