@@ -8,7 +8,6 @@
   },
   "homepage": "https://www.shiplight.ai",
   "repository": "https://github.com/ShiplightAI/cursor-plugin",
-  "license": "MIT",
   "keywords": ["testing", "cloud", "api", "test-management", "automation"],
   "category": "testing",
   "logo": "assets/logo.svg"
