@@ -1,0 +1,19 @@
+{
+  "name": "shiplight-plugins",
+  "owner": { "name": "Shiplight AI" },
+  "metadata": {
+    "description": "AI-powered test automation — browser testing via MCP and cloud test management"
+  },
+  "plugins": [
+    {
+      "name": "mcp-plugin",
+      "source": "plugins/mcp-plugin",
+      "description": "Adds a /verify skill for browser testing and local test verification"
+    },
+    {
+      "name": "cloud-plugin",
+      "source": "plugins/cloud-plugin",
+      "description": "Adds a /shiplight-cloud skill for cloud test case management — create, run, and manage tests via Shiplight API"
+    }
+  ]
+}
