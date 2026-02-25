@@ -10,5 +10,6 @@
   "repository": "https://github.com/ShiplightAI/cursor-plugin",
   "license": "MIT",
   "keywords": ["testing", "cloud", "api", "test-management", "automation"],
-  "category": "testing"
+  "category": "testing",
+  "logo": "assets/logo.svg"
 }
