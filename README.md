@@ -33,39 +33,16 @@ In Cursor chat, run:
 
 After installation, restart Cursor for the plugins to take effect.
 
-### Local Install (for development/testing)
-
-To test the plugins locally before publishing, copy the plugin components into your project's `.cursor/` directory.
+### Manual Install
 
 ```bash
-# Clone the repo
 git clone https://github.com/ShiplightAI/cursor-plugin.git
 cd cursor-plugin
-
-TARGET=/path/to/your-project
+bash install.sh --target /path/to/your-project        # Install mcp-plugin
+bash install.sh --all --target /path/to/your-project   # Install all plugins
 ```
 
-**mcp-plugin** — MCP server + `/verify` skill:
-
-```bash
-# Copy MCP config (creates .cursor/mcp.json with browser server)
-mkdir -p $TARGET/.cursor
-cp plugins/mcp-plugin/.mcp.json $TARGET/.cursor/mcp.json
-
-# Copy skill
-mkdir -p $TARGET/.cursor/plugins/shiplight-mcp/skills/verify
-cp plugins/mcp-plugin/skills/verify/SKILL.md \
-   $TARGET/.cursor/plugins/shiplight-mcp/skills/verify/SKILL.md
-```
-
-**cloud-plugin** — `/shiplight` skill:
-
-```bash
-# Copy skill
-mkdir -p $TARGET/.cursor/plugins/shiplight-cloud/skills/shiplight
-cp plugins/cloud-plugin/skills/shiplight/SKILL.md \
-   $TARGET/.cursor/plugins/shiplight-cloud/skills/shiplight/SKILL.md
-```
+Options can be combined, e.g. `bash install.sh --all --target ~/my-project`.
 
 Restart Cursor after setup.
 
