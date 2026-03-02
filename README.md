@@ -38,11 +38,10 @@ After installation, restart Cursor for the plugins to take effect.
 ```bash
 git clone https://github.com/ShiplightAI/cursor-plugin.git
 cd cursor-plugin
-bash install.sh --target /path/to/your-project        # Install mcp-plugin
-bash install.sh --all --target /path/to/your-project   # Install all plugins
+bash install.sh                                        # Install mcp-plugin globally (~/.cursor)
+bash install.sh --all                                  # Install all plugins globally
+bash install.sh --target ~/my-project                  # Install to a specific project
 ```
-
-Options can be combined, e.g. `bash install.sh --all --target ~/my-project`.
 
 Restart Cursor after setup.
 
@@ -53,10 +52,10 @@ Restart Cursor after setup.
 cursor agent mcp list
 
 # Enable and approve the server
-cursor agent mcp enable browser
+cursor agent mcp enable shiplight
 
 # List available tools
-cursor agent mcp list-tools browser
+cursor agent mcp list-tools shiplight
 
 # Test a browser session
 cursor agent --print --approve-mcps \
@@ -65,7 +64,7 @@ cursor agent --print --approve-mcps \
 
 ## Verify
 
-After installing, go to **Cursor Settings** (Cmd+Shift+J) → **MCP** to confirm the Shiplight browser MCP server is registered (mcp-plugin). Skills `/verify` and `/shiplight` should be available in Cursor chat.
+After installing, go to **Cursor Settings** (Cmd+Shift+J) → **MCP** to confirm the Shiplight MCP server is registered (mcp-plugin). Skills `/verify` and `/shiplight` should be available in Cursor chat.
 
 ## Links
 
