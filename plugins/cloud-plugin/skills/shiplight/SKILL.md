@@ -398,6 +398,48 @@ curl -X POST -H "Authorization: Bearer $API_TOKEN" \
 
 ---
 
+## Agent Session Video Upload
+
+Upload a locally saved agent session recording to S3 and get a permanent public URL for embedding in PRs or sharing. Use this after a successful verification session where `record_video: true` was set — `close_session` returns a `local_video_path`. **Only upload on successful verification.** Skip if verification failed.
+
+### Get Video Upload URL
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"filename": "recording.webm"}' \
+  https://api.shiplight.ai/v1/agent/video-upload-url
+```
+
+**Request body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `filename` | string | yes | Filename of the video (e.g. `recording.webm`) |
+
+**Response:** `{ uploadUrl, videoUrl }`
+
+- `uploadUrl` — presigned S3 URL for upload, expires in **5 minutes**
+- `videoUrl` — permanent public URL, never expires
+
+### Upload Video to S3
+
+```bash
+curl -X PUT \
+  -H "Content-Type: video/webm" \
+  --upload-file "$LOCAL_VIDEO_PATH" \
+  "$UPLOAD_URL"
+```
+
+The `videoUrl` from the Get Video Upload URL step is the permanent public URL. Embed it in the PR description:
+
+```
+🎥 [Verification recording]($VIDEO_URL)
+```
+
+---
+
 ## Artifacts
 
 ### Download S3 File
