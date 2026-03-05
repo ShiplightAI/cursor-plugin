@@ -449,21 +449,17 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 The `test_flow` object used in create/update test case:
 
 ```yaml
-version: '1.2.0'
-goal: 'Verify user can log in to dashboard'
-url: 'https://app.example.com/login'
+goal: Verify user can log in to dashboard
 statements:
-  - uid: 'step-1'
-    type: 'ACTION'
-    description: 'Enter email address'
-    action_entity:
-      action_data:
-        action_name: 'input_text'
-        kwargs: { value: 'user@example.com' }
-      element_index: 0
-  - uid: 'step-2'
-    type: 'DRAFT'
-    description: 'Verify dashboard is displayed'
+  - URL: https://app.example.com/login
+  - action: input_text
+    description: Enter email address
+    locator: "getByRole('textbox', { name: 'Email' })"
+    text: user@example.com
+  - action: click
+    description: Click the login button
+    locator: "getByRole('button', { name: 'Log in' })"
+  - VERIFY: Dashboard is displayed
 # Optional: teardown section runs after test (same statement format)
 ```
 
@@ -471,40 +467,40 @@ statements:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `version` | string | Always `"1.2.0"` |
 | `goal` | string | What the test verifies |
-| `url` | string | Starting URL |
 | `statements` | array | Test steps |
 
-### Statement types
+### Statement types (YAML syntax)
 
-| Type | Description | Has `action_entity`? |
-|------|-------------|---------------------|
-| `ACTION` | Concrete browser action with element target | Yes |
-| `DRAFT` | Natural language step — AI resolves at runtime (~10-15s) | No |
-| `STEP` | Group of nested statements | No (has `statements` array) |
-| `IF_ELSE` | Conditional branch | No (has `then`/`else` arrays) |
-| `WHILE_LOOP` | Loop | No (has `body` array) |
+| Syntax | Description |
+|--------|-------------|
+| `action: <name>` + `locator:` | Concrete browser action with element locator (<1s, deterministic) |
+| `VERIFY: <condition>` | AI-powered assertion (~5-10s) |
+| `URL: <url>` | Navigate to URL |
+| `STEP: <label>` + nested `statements:` | Group of nested statements |
+| Plain string | DRAFT — AI resolves at runtime (~5-10s, use sparingly) |
+| `IF_ELSE:` | Conditional branch (has `then`/`else` arrays) |
+| `WHILE_LOOP:` | Loop (has `body` array) |
 
 ### Action names
 
-Common actions (all require `element_index` in `action_entity` unless noted):
+Common actions with their flat YAML parameters:
 
-| Action | `kwargs` | Description |
-|--------|----------|-------------|
-| `click` | `{}` | Click element |
-| `double_click` | `{}` | Double-click element |
-| `input_text` | `{ value: "text" }` | Type into input field |
-| `clear_input` | `{}` | Clear input field |
-| `press` | `{ keys: "Enter" }` | Press keyboard key(s) |
-| `select_dropdown_option` | `{ option: "Value" }` | Select from dropdown |
-| `go_to_url` | `{ url: "https://..." }` | Navigate to URL |
-| `go_back` | `{}` | Browser back |
-| `scroll` | `{ direction: "down" }` | Scroll page |
-| `scroll_to_text` | `{ text: "..." }` | Scroll until text visible |
-| `wait` | `{ seconds: 3 }` | Wait fixed duration |
-| `upload_file` | `{ file_path: "..." }` | Upload file to input |
-| `verify` | `{ expected: "text" }` | Assert content exists (AI-powered) |
-| `ai_extract` | `{ description: "..." }` | Extract data from page (AI-powered) |
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `click` | `locator:` | Click element |
+| `double_click` | `locator:` | Double-click element |
+| `input_text` | `locator:`, `text:` | Type into input field |
+| `clear_input` | `locator:` | Clear input field |
+| `press` | `keys:` | Press keyboard key(s) |
+| `select_dropdown_option` | `locator:`, `option:` | Select from dropdown |
+| `go_to_url` | `url:` | Navigate to URL |
+| `go_back` | — | Browser back |
+| `scroll` | `direction:` | Scroll page |
+| `scroll_to_text` | `text:` | Scroll until text visible |
+| `wait` | `seconds:` | Wait fixed duration |
+| `upload_file` | `locator:`, `file_path:` | Upload file to input |
+| `verify` | `expected:` | Assert content exists (AI-powered) |
+| `ai_extract` | `description:` | Extract data from page (AI-powered) |
 
 Additional actions: `right_click`, `hover`, `send_keys_on_element`, `get_dropdown_options`, `set_date_for_native_date_picker`, `scroll_on_element`, `reload_page`, `switch_tab`, `close_tab`, `wait_for_page_ready`, `wait_for_download_complete`, `save_variable`, `ai_wait_until`, `generate_2fa_code`
