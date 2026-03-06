@@ -129,7 +129,7 @@ npx shiplight test
 
 ## YAML Test Format
 
-Before writing any `.test.yaml` files, read the MCP resource `shiplight://schemas/testflow-yaml-v1.3.0` for the full YAML spec including statement types, actions, templates, variables, and examples.
+Before writing any `.test.yaml` files, read the MCP resource `shiplight://yaml-test-spec-v1.3.0` for the full YAML spec including statement types, actions, templates, variables, and examples.
 
 ## Project Structure
 
