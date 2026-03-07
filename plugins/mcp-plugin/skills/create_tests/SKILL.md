@@ -116,10 +116,10 @@ For each test the user wants to create:
 2. **Walk through the flow** — use `get_dom` to see the page, then `act` to perform each action. This captures locators from the response.
 3. **Capture locators** — use `get_locator` for additional element info when needed.
 4. **Build the YAML** — construct the `.test.yaml` content with ACTION statements using captured locators. Use `VERIFY:` for assertions.
-5. **Save the test** — call `save_yaml_test` with the file path and YAML content. This validates locator coverage (minimum 50% required).
+5. **Save and validate** — write the `.test.yaml` file, then call `validate_yaml_test` with the file path to check locator coverage (minimum 50% required).
 6. **Close the session** — call `close_session` when done.
 
-**Important:** Do NOT write YAML tests from imagination. Always walk through the app in a browser session first to capture real locators. Tests without locators are rejected by `save_yaml_test`.
+**Important:** Do NOT write YAML tests from imagination. Always walk through the app in a browser session first to capture real locators. Tests without locators are rejected by `validate_yaml_test`.
 
 ### 7. Verify tests run
 
