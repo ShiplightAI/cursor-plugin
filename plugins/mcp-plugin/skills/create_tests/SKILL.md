@@ -113,7 +113,7 @@ For projects that don't require login, just add a test project without dependenc
 For each test the user wants to create:
 
 1. **Open a browser session** — call `new_session` with the app's `starting_url`.
-2. **Walk through the flow** — use `get_dom` to see the page, then `act` to perform each action. This captures locators from the response.
+2. **Walk through the flow** — use `inspect_page` to see the page, then `act` to perform each action. This captures locators from the response.
 3. **Capture locators** — use `get_locator` for additional element info when needed.
 4. **Build the YAML** — construct the `.test.yaml` content with ACTION statements using captured locators. Use `VERIFY:` for assertions.
 5. **Save and validate** — write the `.test.yaml` file, then call `validate_yaml_test` with the file path to check locator coverage (minimum 50% required).
@@ -155,6 +155,6 @@ my-tests/
 ## Tips
 
 - ACTION statements with locators replay ~10x faster than DRAFTs. Always prefer ACTIONs.
-- Use `get_dom` as the primary way to understand page state. Only use `take_screenshot` when you need visual info.
+- Use `inspect_page` to understand page state. Read the DOM file first; only view the screenshot when you need visual info.
 - Run a specific project's tests with: `npx shiplight test my-saas-app/`
 - The `.env` file is auto-discovered by `shiplightConfig()` — no manual dotenv setup needed.

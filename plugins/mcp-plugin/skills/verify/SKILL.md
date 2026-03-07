@@ -27,9 +27,9 @@ Use the MCP tools from `@shiplightai/mcp`. The following steps are a general gui
 
 4. **Navigate to the relevant page** — if the change is on a specific route, use `navigate` or pass the full URL in `new_session`.
 
-5. **Inspect the page** — call `get_dom` to get the DOM tree with element indices. This tells you what's on the page and provides the element indices needed for `act`. If you need visual information (layout, colors, images), call `take_screenshot` with the `dom_state_id` from `get_dom`.
+5. **Inspect the page** — call `inspect_page` to get the DOM tree with element indices and a screenshot. Read the DOM file to understand what's on the page — it provides the element indices needed for `act`. Only view the screenshot file when you need visual information (layout, colors, images).
 
-6. **Interact and verify** — use `act` to simulate user actions based on the element indices from `get_dom`.
+6. **Interact and verify** — use `act` to simulate user actions based on the element indices from `inspect_page`.
 
 7. **Check for errors** — call `get_browser_console_logs` to check for any JavaScript errors that may have been introduced.
 
@@ -54,7 +54,7 @@ If a saved storage state file already exists, use it automatically when creating
 
 ## Tips
 
-- Use `get_dom` as the default way to understand page state. Only call `take_screenshot` when you need visual information (layout, colors, images).
+- Use `inspect_page` to understand page state. Read the DOM file first; only view the screenshot when you need visual information (layout, colors, images).
 - Use `verify` actions inside `act` to assert expected UI state (e.g. text is visible, element exists).
 - If a page takes time to load, use a `wait` action or `wait_for_page_ready` before taking a screenshot.
 - Use `get_browser_console_logs` to catch runtime errors that aren't visible in the UI.
