@@ -82,67 +82,18 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 
 **Response:** `{ id, title, test_flow, folder_id }`
 
-### Create Test Case
+### Create / Sync Test Case
 
-```bash
-curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Login Flow",
-    "test_flow": {
-      "version": "1.2.0",
-      "goal": "Verify user can log in",
-      "url": "https://app.example.com/login",
-      "statements": [
-        {
-          "uid": "step-1",
-          "type": "ACTION",
-          "description": "Enter email address",
-          "action_entity": {
-            "action_data": { "action_name": "input_text", "kwargs": { "value": "user@example.com" } },
-            "element_index": 0
-          }
-        }
-      ]
-    },
-    "folder_id": 1,
-    "environment_configs": [
-      {
-        "environment_id": 1,
-        "test_account_group": { "type": "None", "account_ids": [] },
-        "path": ""
-      }
-    ]
-  }' \
-  https://api.shiplight.ai/v1/test-cases
-```
+**Use the `save_test_case` MCP tool** instead of raw API calls. It handles YAML→JSON conversion, template resolution, and function linking automatically.
 
-**Request body:**
+### Update Test Case (partial)
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `title` | string | yes | Test case name |
-| `test_flow` | object | yes | TestFlow object (see schema below) |
-| `folder_id` | number | no | Folder to place test case in |
-| `environment_configs` | array | no | Environment + account configuration |
-
-`environment_configs` items:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `environment_id` | number | Environment ID (use List Environments to find) |
-| `test_account_group.type` | `"None"` \| `"Specific"` \| `"Any"` | Account selection strategy |
-| `test_account_group.account_ids` | number[] | Account IDs (for `"Specific"` type) |
-| `path` | string | URL path appended to environment base URL |
-
-**Response:** `{ success, message, test_case_id, title, folder_id, created_at }`
-
-### Update Test Case
+For partial updates that don't involve `test_flow` (e.g. renaming), use the REST API directly:
 
 ```bash
 curl -X PUT -H "Authorization: Bearer $API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"title": "Updated Login Flow", "test_flow": {...}}' \
+  -d '{"title": "Updated Login Flow"}' \
   https://api.shiplight.ai/v1/test-cases/123
 ```
 
@@ -151,7 +102,8 @@ curl -X PUT -H "Authorization: Bearer $API_TOKEN" \
 | Field | Type | Description |
 |-------|------|-------------|
 | `title` | string | New title |
-| `test_flow` | object | Updated TestFlow object |
+| `test_flow` | object | Updated TestFlow JSON object (use `save_test_case` MCP tool instead for YAML sources) |
+| `folder_id` | number | Move to a different folder |
 
 **Response:** `{ success, message, test_case_id, updated_at }`
 
@@ -361,6 +313,67 @@ curl -X POST -H "Authorization: Bearer $API_TOKEN" \
 
 ---
 
+## Templates (Reusable Steps)
+
+Reusable test step sequences that can be referenced from test cases via `template:` in YAML or `reference_id` in the cloud. The API uses the legacy name "reusable-steps".
+
+### Get Template
+
+```bash
+curl -H "Authorization: Bearer $API_TOKEN" \
+  https://api.shiplight.ai/v1/reusable-steps/138
+```
+
+**Response:** `{ id, name, description, statements }`
+
+### Create / Sync Template
+
+**Use the `save_template` MCP tool** instead of raw API calls. It handles YAML→JSON conversion automatically.
+
+### Update Template (partial)
+
+For partial updates that don't involve `statements` (e.g. renaming):
+
+```bash
+curl -X PUT -H "Authorization: Bearer $API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "dismiss-popup", "description": "Updated description"}' \
+  https://api.shiplight.ai/v1/reusable-steps/138
+```
+
+**Request body:** (all fields optional)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Template name |
+| `description` | string | What the template does |
+| `statements` | array | Statement objects (use `save_template` MCP tool instead for YAML sources) |
+
+**Response:** `{ id, name, description, statements }`
+
+---
+
+## Test Functions
+
+Custom TypeScript functions that can be called from test cases via `call: "file#export"` in YAML.
+
+### Get Test Function
+
+```bash
+curl -H "Authorization: Bearer $API_TOKEN" \
+  https://api.shiplight.ai/v1/functions/42
+```
+
+**Response:** `{ id, name, description, code, status }`
+
+### Create / Sync Test Function
+
+**Use the `save_function` MCP tool** instead of raw API calls. It reads the TypeScript file, extracts exports and `@function_id` JSDoc tags, and creates/updates functions automatically.
+
+**Response:** `{ id, name, description, code, status }`
+
+---
+
 ## Test Generation
 
 ### Generate Test from Goal
@@ -395,6 +408,48 @@ curl -X POST -H "Authorization: Bearer $API_TOKEN" \
 | `creation_mode` | string | yes | Always `"SINGLE"` |
 
 **Response:** `{ testCase: { id, title, test_flow } }`
+
+---
+
+## Agent Session Video Upload
+
+Upload a locally saved agent session recording to S3 and get a permanent public URL for embedding in PRs or sharing. Use this after a successful verification session where `record_video: true` was set — `close_session` returns a `local_video_path`. **Only upload on successful verification.** Skip if verification failed.
+
+### Get Video Upload URL
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"filename": "recording.webm"}' \
+  https://api.shiplight.ai/v1/agent/video-upload-url
+```
+
+**Request body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `filename` | string | yes | Filename of the video (e.g. `recording.webm`) |
+
+**Response:** `{ uploadUrl, videoUrl }`
+
+- `uploadUrl` — presigned S3 URL for upload, expires in **5 minutes**
+- `videoUrl` — permanent public URL, never expires
+
+### Upload Video to S3
+
+```bash
+curl -X PUT \
+  -H "Content-Type: video/webm" \
+  --upload-file "$LOCAL_VIDEO_PATH" \
+  "$UPLOAD_URL"
+```
+
+The `videoUrl` from the Get Video Upload URL step is the permanent public URL. Embed it in the PR description:
+
+```
+🎥 [Verification recording]($VIDEO_URL)
+```
 
 ---
 
@@ -437,64 +492,16 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 2. `POST /v1/test-batch-gen-tasks/create` → submit `title`, `startingUrl`, `goal`, `environmentId`, `testAccountGroup`, `creation_mode: "SINGLE"`
 3. Response contains `{ testCase: { id, test_flow } }` — run it or inspect the flow
 
+### Sync local artifacts to cloud
+
+Use the MCP sync tools — they handle YAML→JSON conversion, ID tracking, and template resolution:
+
+1. **Test cases**: `save_test_case` MCP tool — pass the YAML content, it creates or updates based on `test_case_id` in the YAML metadata
+2. **Templates**: `save_template` MCP tool — pass the YAML content, it creates or updates based on `template_id` in the YAML metadata
+3. **Functions**: `save_function` MCP tool — pass the TypeScript file path, it extracts exports and syncs based on `@function_id` JSDoc tags
+
 ### Download test artifacts
 
 1. `GET /test-case-results/<id>` → find `video`, `trace`, or `report_s3_uri` fields (S3 URIs)
 2. `GET /v1/s3/file?uri=<S3_URI>` → download the artifact content
 
----
-
-## TestFlow Schema
-
-The `test_flow` object used in create/update test case:
-
-```yaml
-goal: Verify user can log in to dashboard
-statements:
-  - URL: https://app.example.com/login
-  - desc: Enter email address
-    action: input_text
-    locator: "getByRole('textbox', { name: 'Email' })"
-    text: user@example.com
-  - desc: Click the login button
-    js: "await page.getByRole('button', { name: 'Log in' }).first().click({ timeout: 5000 })"
-  - VERIFY: Dashboard is displayed
-# Optional: teardown section runs after test (same statement format)
-```
-
-### Required fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `goal` | string | What the test verifies |
-| `statements` | array | Test steps |
-
-### Statement types (YAML syntax)
-
-| Syntax | Description |
-|--------|-------------|
-| `desc:` + `js:` | ACTION with Playwright code cache (<1s, self-heals via desc) |
-| `desc:` + `action:` + `locator:` | ACTION in structured form (for `input_text`, `select_dropdown_option`, `upload_file`) |
-| `desc:` only | DRAFT — AI resolves at runtime (~5-10s, use sparingly) |
-| `VERIFY: <condition>` | Assertion, optionally with `js:` cache |
-| `URL: <url>` | Navigate to URL |
-| `CODE: <js>` | Inline Playwright code (no self-healing) |
-| `STEP: <label>` + nested `statements:` | Group of nested statements |
-| `IF:` + `THEN:` / `ELSE:` | Conditional branch |
-| `WHILE:` + `DO:` | Loop with timeout |
-
-### ACTION forms
-
-Prefer `js:` shorthand for clicks, keyboard, hover. Use structured `action:` for `input_text`, `select_dropdown_option`, `upload_file`, `scroll`.
-
-```yaml
-# js: shorthand (preferred for simple actions)
-- desc: Click the login button
-  js: "await page.getByRole('button', { name: 'Log in' }).first().click({ timeout: 5000 })"
-
-# Structured form (for actions with typed parameters)
-- desc: Enter email address
-  action: input_text
-  locator: "getByRole('textbox', { name: 'Email' })"
-  text: user@example.com
-```

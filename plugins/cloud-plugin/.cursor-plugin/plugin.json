@@ -10,5 +10,14 @@
   "repository": "https://github.com/ShiplightAI/cursor-plugin",
   "keywords": ["testing", "cloud", "api", "test-management", "automation"],
   "category": "testing",
-  "logo": "assets/logo.svg"
+  "logo": "assets/logo.svg",
+  "mcpServers": {
+    "cloud": {
+      "command": "npx",
+      "args": ["-y", "@shiplightai/mcp@latest", "--cloud-only"],
+      "env": {
+        "API_TOKEN": ""
+      }
+    }
+  }
 }

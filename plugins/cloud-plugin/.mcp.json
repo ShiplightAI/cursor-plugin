@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "cloud": {
+      "command": "npx",
+      "args": ["-y", "@shiplightai/mcp@latest", "--cloud-only"],
+      "env": {
+        "API_TOKEN": ""
+      }
+    }
+  }
+}

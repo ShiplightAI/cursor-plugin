@@ -84,7 +84,7 @@ else
 fi
 
 # Copy verify skill
-VERIFY_SKILL="$TARGET/.cursor/plugins/shiplight-mcp/skills/verify/SKILL.md"
+VERIFY_SKILL="$TARGET/.cursor/skills/verify/SKILL.md"
 mkdir -p "$(dirname "$VERIFY_SKILL")"
 if [ -f "$VERIFY_SKILL" ]; then
   cp "$VERIFY_SKILL" "$VERIFY_SKILL.bak"
@@ -94,7 +94,7 @@ cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/verify/SKILL.md" "$VERIFY_SKILL"
 echo "    /verify skill -> $VERIFY_SKILL"
 
 # Copy create_yaml_tests skill
-CREATE_TESTS_SKILL="$TARGET/.cursor/plugins/shiplight-mcp/skills/create_yaml_tests/SKILL.md"
+CREATE_TESTS_SKILL="$TARGET/.cursor/skills/create_yaml_tests/SKILL.md"
 mkdir -p "$(dirname "$CREATE_TESTS_SKILL")"
 if [ -f "$CREATE_TESTS_SKILL" ]; then
   cp "$CREATE_TESTS_SKILL" "$CREATE_TESTS_SKILL.bak"
@@ -103,11 +103,19 @@ fi
 cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/create_yaml_tests/SKILL.md" "$CREATE_TESTS_SKILL"
 echo "    /create_yaml_tests skill -> $CREATE_TESTS_SKILL"
 
-# --- cloud-plugin: /shiplight skill ---
+# --- cloud-plugin: MCP config + /shiplight skill ---
 if [ "$ALL" = true ]; then
   echo "  Installing cloud-plugin..."
 
-  CLOUD_SKILL="$TARGET/.cursor/plugins/shiplight-cloud/skills/shiplight/SKILL.md"
+  # Merge cloud MCP server into config
+  if [ -f "$MCP_FILE" ]; then
+    cp "$MCP_FILE" "$MCP_FILE.bak"
+    jq -s '.[0] * {mcpServers: (.[0].mcpServers + .[1].mcpServers)}' \
+      "$MCP_FILE.bak" "$SCRIPT_DIR/plugins/cloud-plugin/.mcp.json" > "$MCP_FILE"
+    echo "    MCP config -> merged cloud server into $MCP_FILE"
+  fi
+
+  CLOUD_SKILL="$TARGET/.cursor/skills/shiplight/SKILL.md"
   mkdir -p "$(dirname "$CLOUD_SKILL")"
   if [ -f "$CLOUD_SKILL" ]; then
     cp "$CLOUD_SKILL" "$CLOUD_SKILL.bak"
@@ -127,4 +135,5 @@ echo "  3. Use /verify to test UI changes in a browser"
 echo "  4. Use /create_yaml_tests to scaffold a local Shiplight test project"
 if [ "$ALL" = true ]; then
   echo "  5. Use /shiplight to manage cloud test cases"
+  echo "  6. Set your API_TOKEN in Cursor Settings > MCP for the cloud server"
 fi

@@ -2,7 +2,7 @@
   "name": "shiplight-mcp",
   "displayName": "Shiplight MCP",
   "version": "1.0.0",
-  "description": "Adds a /verify skill for browser testing and local test verification",
+  "description": "Adds a /verify and /create_yaml_tests skills for browser testing and local test verification",
   "author": {
     "name": "Shiplight AI"
   },

@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "shiplight": {
+    "browser": {
       "command": "npx",
       "args": ["-y", "@shiplightai/mcp@latest"],
       "env": {
