@@ -6,10 +6,12 @@ AI-powered test automation for Cursor — browser testing via MCP and cloud test
 
 ### mcp-plugin (free)
 
-Browser automation MCP tools + UI verification skill.
+Browser automation MCP tools + UI verification and test authoring skills.
 
 - **MCP tools** — live browser sessions, navigation, actions, page inspection, debugging
-- **Skill** — `/verify` — verify UI changes in the browser using MCP tools
+- **Skills:**
+  - `/verify` — verify UI changes in the browser using MCP tools
+  - `/create_yaml_tests` — scaffold a local test project, configure credentials, and write YAML tests by walking through the app in a browser
 
 ### cloud-plugin (paid)
 

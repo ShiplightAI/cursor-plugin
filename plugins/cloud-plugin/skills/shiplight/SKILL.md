@@ -452,13 +452,12 @@ The `test_flow` object used in create/update test case:
 goal: Verify user can log in to dashboard
 statements:
   - URL: https://app.example.com/login
-  - action: input_text
-    description: Enter email address
+  - desc: Enter email address
+    action: input_text
     locator: "getByRole('textbox', { name: 'Email' })"
     text: user@example.com
-  - action: click
-    description: Click the login button
-    locator: "getByRole('button', { name: 'Log in' })"
+  - desc: Click the login button
+    js: "await page.getByRole('button', { name: 'Log in' }).first().click({ timeout: 5000 })"
   - VERIFY: Dashboard is displayed
 # Optional: teardown section runs after test (same statement format)
 ```
@@ -474,33 +473,28 @@ statements:
 
 | Syntax | Description |
 |--------|-------------|
-| `action: <name>` + `locator:` | Concrete browser action with element locator (<1s, deterministic) |
-| `VERIFY: <condition>` | AI-powered assertion (~5-10s) |
+| `desc:` + `js:` | ACTION with Playwright code cache (<1s, self-heals via desc) |
+| `desc:` + `action:` + `locator:` | ACTION in structured form (for `input_text`, `select_dropdown_option`, `upload_file`) |
+| `desc:` only | DRAFT — AI resolves at runtime (~5-10s, use sparingly) |
+| `VERIFY: <condition>` | Assertion, optionally with `js:` cache |
 | `URL: <url>` | Navigate to URL |
+| `CODE: <js>` | Inline Playwright code (no self-healing) |
 | `STEP: <label>` + nested `statements:` | Group of nested statements |
-| Plain string | DRAFT — AI resolves at runtime (~5-10s, use sparingly) |
-| `IF_ELSE:` | Conditional branch (has `then`/`else` arrays) |
-| `WHILE_LOOP:` | Loop (has `body` array) |
+| `IF:` + `THEN:` / `ELSE:` | Conditional branch |
+| `WHILE:` + `DO:` | Loop with timeout |
 
-### Action names
+### ACTION forms
 
-Common actions with their flat YAML parameters:
+Prefer `js:` shorthand for clicks, keyboard, hover. Use structured `action:` for `input_text`, `select_dropdown_option`, `upload_file`, `scroll`.
 
-| Action | Parameters | Description |
-|--------|-----------|-------------|
-| `click` | `locator:` | Click element |
-| `double_click` | `locator:` | Double-click element |
-| `input_text` | `locator:`, `text:` | Type into input field |
-| `clear_input` | `locator:` | Clear input field |
-| `press` | `keys:` | Press keyboard key(s) |
-| `select_dropdown_option` | `locator:`, `option:` | Select from dropdown |
-| `go_to_url` | `url:` | Navigate to URL |
-| `go_back` | — | Browser back |
-| `scroll` | `direction:` | Scroll page |
-| `scroll_to_text` | `text:` | Scroll until text visible |
-| `wait` | `seconds:` | Wait fixed duration |
-| `upload_file` | `locator:`, `file_path:` | Upload file to input |
-| `verify` | `expected:` | Assert content exists (AI-powered) |
-| `ai_extract` | `description:` | Extract data from page (AI-powered) |
+```yaml
+# js: shorthand (preferred for simple actions)
+- desc: Click the login button
+  js: "await page.getByRole('button', { name: 'Log in' }).first().click({ timeout: 5000 })"
 
-Additional actions: `right_click`, `hover`, `send_keys_on_element`, `get_dropdown_options`, `set_date_for_native_date_picker`, `scroll_on_element`, `reload_page`, `switch_tab`, `close_tab`, `wait_for_page_ready`, `wait_for_download_complete`, `save_variable`, `ai_wait_until`, `generate_2fa_code`
+# Structured form (for actions with typed parameters)
+- desc: Enter email address
+  action: input_text
+  locator: "getByRole('textbox', { name: 'Email' })"
+  text: user@example.com
+```

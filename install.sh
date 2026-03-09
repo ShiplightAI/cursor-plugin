@@ -93,15 +93,15 @@ fi
 cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/verify/SKILL.md" "$VERIFY_SKILL"
 echo "    /verify skill -> $VERIFY_SKILL"
 
-# Copy create_tests skill
-CREATE_TESTS_SKILL="$TARGET/.cursor/plugins/shiplight-mcp/skills/create_tests/SKILL.md"
+# Copy create_yaml_tests skill
+CREATE_TESTS_SKILL="$TARGET/.cursor/plugins/shiplight-mcp/skills/create_yaml_tests/SKILL.md"
 mkdir -p "$(dirname "$CREATE_TESTS_SKILL")"
 if [ -f "$CREATE_TESTS_SKILL" ]; then
   cp "$CREATE_TESTS_SKILL" "$CREATE_TESTS_SKILL.bak"
   echo "    Backed up -> $CREATE_TESTS_SKILL.bak"
 fi
-cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/create_tests/SKILL.md" "$CREATE_TESTS_SKILL"
-echo "    /create_tests skill -> $CREATE_TESTS_SKILL"
+cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/create_yaml_tests/SKILL.md" "$CREATE_TESTS_SKILL"
+echo "    /create_yaml_tests skill -> $CREATE_TESTS_SKILL"
 
 # --- cloud-plugin: /shiplight skill ---
 if [ "$ALL" = true ]; then
@@ -124,7 +124,7 @@ echo "Next steps:"
 echo "  1. Open Cursor in your project"
 echo "  2. Go to Settings (Cmd+Shift+J) -> MCP to confirm the Shiplight server"
 echo "  3. Use /verify to test UI changes in a browser"
-echo "  4. Use /create_tests to scaffold a local Shiplight test project"
+echo "  4. Use /create_yaml_tests to scaffold a local Shiplight test project"
 if [ "$ALL" = true ]; then
   echo "  5. Use /shiplight to manage cloud test cases"
 fi
