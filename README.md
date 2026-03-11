@@ -11,7 +11,7 @@ Browser automation MCP tools + UI verification and test authoring skills.
 - **MCP tools** — live browser sessions, navigation, actions, page inspection, debugging
 - **Skills:**
   - `/verify` — verify UI changes in the browser using MCP tools
-  - `/create_yaml_tests` — scaffold a local test project, configure credentials, and write YAML tests by walking through the app in a browser
+  - `/create_tests` — scaffold a local test project, configure credentials, and write YAML tests by walking through the app in a browser
 
 ### cloud-plugin (paid)
 
@@ -40,9 +40,10 @@ After installation, restart Cursor for the plugins to take effect.
 ```bash
 git clone https://github.com/ShiplightAI/cursor-plugin.git
 cd cursor-plugin
-bash install.sh                                        # Install mcp-plugin globally (~/.cursor)
-bash install.sh --all                                  # Install all plugins globally
-bash install.sh --target ~/my-project                  # Install to a specific project
+bash install.sh                                        # Install to current directory
+bash install.sh --all                                  # Install all plugins to current directory
+bash install.sh --user                                 # Install to user-level (~/.cursor)
+bash install.sh --project ~/my-project                  # Install to a specific project
 ```
 
 Restart Cursor after setup.

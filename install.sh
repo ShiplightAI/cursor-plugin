@@ -5,7 +5,7 @@ set -euo pipefail
 # Installs MCP config and skills globally or into a specific project
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET="$HOME"
+TARGET="$(pwd)"
 ALL=false
 
 usage() {
@@ -16,13 +16,15 @@ Install Shiplight plugins for Cursor.
 
 Options:
   --all               Install all plugins including Shiplight cloud
-  --target <path>     Target project directory (installs per-project instead of global)
+  --project <path>     Target project directory (default: current directory)
+  --user              Install to user-level (~/.cursor) instead of current directory
   --help              Show this help message
 
 Examples:
-  bash install.sh                          # Install globally (~/.cursor)
-  bash install.sh --all                    # Install all plugins globally
-  bash install.sh --target ~/my-project    # Install to a specific project
+  bash install.sh                          # Install to current directory
+  bash install.sh --all                    # Install all plugins to current directory
+  bash install.sh --user                   # Install to user-level (~/.cursor)
+  bash install.sh --project ~/my-project    # Install to a specific project
 EOF
   exit 0
 }
@@ -30,9 +32,10 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --all) ALL=true; shift ;;
-    --target)
+    --user) TARGET="$HOME"; shift ;;
+    --project)
       if [[ -z "${2:-}" ]]; then
-        echo "Error: --target requires a path"
+        echo "Error: --project requires a path"
         exit 1
       fi
       TARGET="$2"; shift 2 ;;
@@ -52,9 +55,17 @@ if [ "$TARGET" = "$HOME" ]; then
 else
   SCOPE="project ($TARGET/.cursor)"
 fi
+TARGET="$(cd "$TARGET" && pwd)"
 
 echo "Installing Shiplight Cursor plugins ($EDITION)..."
-echo "  Scope: $SCOPE"
+echo "  Destination: $TARGET/.cursor"
+echo ""
+read -r -p "Proceed with installation? [Y/n] " CONFIRM
+CONFIRM="${CONFIRM:-Y}"
+if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+  echo "Installation cancelled."
+  exit 0
+fi
 echo ""
 
 # --- mcp-plugin: MCP config + /verify skill ---
@@ -93,15 +104,15 @@ fi
 cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/verify/SKILL.md" "$VERIFY_SKILL"
 echo "    /verify skill -> $VERIFY_SKILL"
 
-# Copy create_yaml_tests skill
-CREATE_TESTS_SKILL="$TARGET/.cursor/skills/create_yaml_tests/SKILL.md"
+# Copy create_tests skill
+CREATE_TESTS_SKILL="$TARGET/.cursor/skills/create_tests/SKILL.md"
 mkdir -p "$(dirname "$CREATE_TESTS_SKILL")"
 if [ -f "$CREATE_TESTS_SKILL" ]; then
   cp "$CREATE_TESTS_SKILL" "$CREATE_TESTS_SKILL.bak"
   echo "    Backed up -> $CREATE_TESTS_SKILL.bak"
 fi
-cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/create_yaml_tests/SKILL.md" "$CREATE_TESTS_SKILL"
-echo "    /create_yaml_tests skill -> $CREATE_TESTS_SKILL"
+cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/create_tests/SKILL.md" "$CREATE_TESTS_SKILL"
+echo "    /create_tests skill -> $CREATE_TESTS_SKILL"
 
 # --- cloud-plugin: MCP config + /shiplight skill ---
 if [ "$ALL" = true ]; then
@@ -132,7 +143,7 @@ echo "Next steps:"
 echo "  1. Open Cursor in your project"
 echo "  2. Go to Settings (Cmd+Shift+J) -> MCP to confirm the Shiplight server"
 echo "  3. Use /verify to test UI changes in a browser"
-echo "  4. Use /create_yaml_tests to scaffold a local Shiplight test project"
+echo "  4. Use /create_tests to scaffold a local Shiplight test project"
 if [ "$ALL" = true ]; then
   echo "  5. Use /shiplight to manage cloud test cases"
   echo "  6. Set your SHIPLIGHT_API_TOKEN in Cursor Settings > MCP for the cloud server"

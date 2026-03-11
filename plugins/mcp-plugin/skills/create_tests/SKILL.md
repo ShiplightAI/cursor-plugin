@@ -1,5 +1,5 @@
 ---
-name: create_yaml_tests
+name: create_tests
 description: "Scaffold a local Shiplight test project, configure credentials, and write YAML tests by walking through the app in a browser."
 ---
 
@@ -9,7 +9,7 @@ Set up a local Shiplight test project and write YAML test files by interacting w
 
 ## When to use
 
-Use `/create_yaml_tests` when the user wants to:
+Use `/create_tests` when the user wants to:
 - Create a new local test project from scratch
 - Add YAML tests for a web application
 - Set up authentication for a test project
