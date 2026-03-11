@@ -135,5 +135,5 @@ echo "  3. Use /verify to test UI changes in a browser"
 echo "  4. Use /create_yaml_tests to scaffold a local Shiplight test project"
 if [ "$ALL" = true ]; then
   echo "  5. Use /shiplight to manage cloud test cases"
-  echo "  6. Set your API_TOKEN in Cursor Settings > MCP for the cloud server"
+  echo "  6. Set your SHIPLIGHT_API_TOKEN in Cursor Settings > MCP for the cloud server"
 fi

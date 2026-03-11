@@ -13,15 +13,15 @@ Manage test cases, test runs, environments, folders, and accounts via the Shipli
 
 **Authentication:** All requests require:
 ```
-Authorization: Bearer $API_TOKEN
+Authorization: Bearer $SHIPLIGHT_API_TOKEN
 ```
 
 ### Token Resolution Order
 
-Resolve `API_TOKEN` using this priority:
+Resolve `SHIPLIGHT_API_TOKEN` using this priority:
 
 1. **Local credentials file** — read `~/.shiplight/credentials.json` → use the `token` field
-2. **Environment variable** — check `$SHIPLIGHT_API_TOKEN` or `$API_TOKEN`
+2. **Environment variable** — check `$SHIPLIGHT_API_TOKEN`
 3. **`.env` file** — check `.env` in the current project directory
 
 If none found, tell the user:
@@ -67,7 +67,7 @@ If any API call returns **401**, the token is expired or revoked:
 ### List Test Cases
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/test-cases
 ```
 
@@ -76,7 +76,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 ### Get Test Case
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/test-cases/123
 ```
 
@@ -91,7 +91,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 For partial updates that don't involve `test_flow` (e.g. renaming), use the REST API directly:
 
 ```bash
-curl -X PUT -H "Authorization: Bearer $API_TOKEN" \
+curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title": "Updated Login Flow"}' \
   https://api.shiplight.ai/v1/test-cases/123
@@ -112,7 +112,7 @@ curl -X PUT -H "Authorization: Bearer $API_TOKEN" \
 Triggers cloud execution. Returns a `test_run_id` for polling.
 
 ```bash
-curl -X POST -H "Authorization: Bearer $API_TOKEN" \
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"trigger": "API", "environment": {"id": 1}}' \
   https://api.shiplight.ai/v1/test-run/test-case/123
@@ -134,7 +134,7 @@ curl -X POST -H "Authorization: Bearer $API_TOKEN" \
 ### List Test Runs
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "https://api.shiplight.ai/v1/test-runs?limit=10"
 ```
 
@@ -154,7 +154,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 **Note:** This endpoint has **no `/v1/` prefix**.
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/run-results/456
 ```
 
@@ -173,7 +173,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 **Note:** This endpoint has **no `/v1/` prefix**.
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/test-case-results/789
 ```
 
@@ -188,7 +188,7 @@ The `video`, `trace`, and `report_s3_uri` fields contain S3 URIs — use the Art
 ### List Environments
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/environments
 ```
 
@@ -197,7 +197,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 ### Get Environment
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/environments/1
 ```
 
@@ -210,7 +210,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 ### List Test Accounts
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "https://api.shiplight.ai/v1/test-accounts?environmentId=1"
 ```
 
@@ -221,7 +221,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 ### Get Test Account
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/test-accounts/1
 ```
 
@@ -230,7 +230,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 ### Create Test Account
 
 ```bash
-curl -X POST -H "Authorization: Bearer $API_TOKEN" \
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser@example.com",
@@ -264,7 +264,7 @@ curl -X POST -H "Authorization: Bearer $API_TOKEN" \
 ### List All Folders
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/test-folders/all
 ```
 
@@ -275,7 +275,7 @@ Optional query: `?search=keyword`
 ### List Folders by Parent
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "https://api.shiplight.ai/v1/test-folders?parentId=1"
 ```
 
@@ -286,7 +286,7 @@ Omit `parentId` entirely for root-level folders.
 ### Get Folder
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/test-folders/1
 ```
 
@@ -295,7 +295,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 ### Create Folder
 
 ```bash
-curl -X POST -H "Authorization: Bearer $API_TOKEN" \
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "Regression Tests", "description": "Weekly regression suite", "parentId": null}' \
   https://api.shiplight.ai/v1/test-folders
@@ -320,7 +320,7 @@ Reusable test step sequences that can be referenced from test cases via `templat
 ### Get Template
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/reusable-steps/138
 ```
 
@@ -335,7 +335,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 For partial updates that don't involve `statements` (e.g. renaming):
 
 ```bash
-curl -X PUT -H "Authorization: Bearer $API_TOKEN" \
+curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "dismiss-popup", "description": "Updated description"}' \
   https://api.shiplight.ai/v1/reusable-steps/138
@@ -360,7 +360,7 @@ Custom TypeScript functions that can be called from test cases via `call: "file#
 ### Get Test Function
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/functions/42
 ```
 
@@ -381,7 +381,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 Uses AI to generate a test case from a natural language goal.
 
 ```bash
-curl -X POST -H "Authorization: Bearer $API_TOKEN" \
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Login Flow",
@@ -419,7 +419,7 @@ Upload a locally saved agent session recording to S3 and get a permanent public 
 
 ```bash
 curl -s -X POST \
-  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"filename": "recording.webm"}' \
   https://api.shiplight.ai/v1/agent/video-upload-url
@@ -460,7 +460,7 @@ The `videoUrl` from the Get Video Upload URL step is the permanent public URL. E
 Download test artifacts (videos, traces, reports) referenced by S3 URIs in test case results.
 
 ```bash
-curl -H "Authorization: Bearer $API_TOKEN" \
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "https://api.shiplight.ai/v1/s3/file?uri=s3://bucket/path/video.webm"
 ```
 
@@ -504,4 +504,3 @@ Use the MCP sync tools — they handle YAML→JSON conversion, ID tracking, and 
 
 1. `GET /test-case-results/<id>` → find `video`, `trace`, or `report_s3_uri` fields (S3 URIs)
 2. `GET /v1/s3/file?uri=<S3_URI>` → download the artifact content
-
