@@ -128,21 +128,21 @@ These best practices bridge the YAML language spec and the action catalog to hel
 
 ### ACTION: `js:` shorthand vs structured format
 
-Every ACTION has a `desc` (ground truth) and a cache (`js` or `action`/`locator`). When the cache fails, the agent self-heals using the description.
+Every ACTION has an `intent` (ground truth) and a cache (`js` or `action`/`locator`). When the cache fails, the agent self-heals using the intent.
 
 **Prefer `js:` shorthand** for simple actions — it's more readable, more flexible, and the agent writes exactly the Playwright code it wants:
 
 ```yaml
 # Click
-- desc: Click the login button
+- intent: Click the login button
   js: "await page.getByRole('button', { name: 'Login' }).first().click({ timeout: 5000 })"
 
 # Press key
-- desc: Press Escape to close dialog
+- intent: Press Escape to close dialog
   js: "await page.keyboard.press('Escape')"
 
 # Hover
-- desc: Hover over the menu
+- intent: Hover over the menu
   js: "await page.getByRole('navigation').first().hover({ timeout: 5000 })"
 ```
 
@@ -151,7 +151,7 @@ Every ACTION has a `desc` (ground truth) and a cache (`js` or `action`/`locator`
 **Use structured format** for actions that plain Playwright code doesn't handle well: `input_text` (handles clearing/focusing), `select_dropdown_option` (handles option resolution), `upload_file` (handles file input), `scroll` (handles scroll logic).
 
 ```yaml
-- desc: Enter email address
+- intent: Enter email address
   action: input_text
   locator: "getByPlaceholder('Email')"
   text: "user@example.com"
@@ -161,7 +161,7 @@ Every ACTION has a `desc` (ground truth) and a cache (`js` or `action`/`locator`
 
 - Always resolve locators to a single element (e.g., `.first()`, `.nth(1)`) to avoid Playwright strict-mode errors
 - Always include `{ timeout: 5000 }` on actions for predictable timing
-- The `desc` is critical — it's the input for self-healing when `js` fails
+- The `intent` is critical — it's the input for self-healing when `js` fails
 - `page`, `agent`, and `expect` are available in scope
 - Do NOT include `xpath` when using `js:` — xpath is only needed when an ACTION has neither `locator` nor `js`
 
@@ -178,7 +178,7 @@ Every ACTION has a `desc` (ground truth) and a cache (`js` or `action`/`locator`
 ```yaml
 # BAD: hard sleep then verify
 - action: wait
-  desc: Wait for page to load
+  intent: Wait for page to load
   seconds: 3
 - VERIFY: Dashboard is loaded
   js: "await expect(page.getByTestId('dashboard')).toBeVisible({ timeout: 2000 })"
@@ -196,7 +196,7 @@ Every ACTION has a `desc` (ground truth) and a cache (`js` or `action`/`locator`
 
 ### General conventions
 
-- Put `desc` first in ACTION statements for readability
+- Put `intent` first in ACTION statements for readability
 - `xpath` is only needed when an ACTION has neither `locator` nor `js`.
 - Single-test vs Suite: isolated test → single-test file; shared setup/teardown → suite; serial execution (shared state) → suite with `serial: true`; same structure, different data → `parameters`
 
