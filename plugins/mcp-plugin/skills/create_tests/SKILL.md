@@ -61,11 +61,32 @@ npx playwright install chromium
 
 If the app requires login, follow the standard [Playwright authentication pattern](https://playwright.dev/docs/auth).
 
-Write login steps with standard Playwright code (fill fields, click submit, save storage state). For apps that require 2FA/TOTP, the `otplib` package can generate time-based codes:
+**a. Add credentials as variables** in `playwright.config.ts` using these standard names:
+
+```ts
+{
+  name: 'my-app',
+  testDir: './tests/my-app',
+  dependencies: ['my-app-setup'],
+  use: {
+    baseURL: 'https://app.example.com',
+    storageState: 'tests/my-app/.auth/storage-state.json',
+    variables: {
+      username: process.env.MY_APP_EMAIL,
+      password: { value: process.env.MY_APP_PASSWORD, sensitive: true },
+      // otp_secret_key: { value: process.env.MY_APP_TOTP_SECRET, sensitive: true },
+    },
+  },
+},
+```
+
+Standard variable names: `username`, `password`, `otp_secret_key`. Use `{ value, sensitive: true }` for secrets so they are masked in logs. Add the actual values to `.env`.
+
+**b. Write `auth.setup.ts`** with standard Playwright code (fill fields, click submit, save storage state). For apps that require 2FA/TOTP, the `otplib` package can generate time-based codes:
 
 ```ts
 import { authenticator } from 'otplib';
-const code = authenticator.generate(process.env.TOTP_SECRET!);
+const code = authenticator.generate(process.env.MY_APP_TOTP_SECRET!);
 ```
 
 ### 6. Write YAML tests
