@@ -6,23 +6,20 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="$(pwd)"
-ALL=false
 
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Install Shiplight plugins for Cursor.
+Install Shiplight plugin for Cursor.
 
 Options:
-  --all               Install all plugins including Shiplight cloud
   --project <path>     Target project directory (default: current directory)
   --user              Install to user-level (~/.cursor) instead of current directory
   --help              Show this help message
 
 Examples:
   bash install.sh                          # Install to current directory
-  bash install.sh --all                    # Install all plugins to current directory
   bash install.sh --user                   # Install to user-level (~/.cursor)
   bash install.sh --project ~/my-project    # Install to a specific project
 EOF
@@ -31,7 +28,6 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --all) ALL=true; shift ;;
     --user) TARGET="$HOME"; shift ;;
     --project)
       if [[ -z "${2:-}" ]]; then
@@ -44,12 +40,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [ "$ALL" = true ]; then
-  EDITION="full (mcp-plugin + cloud-plugin)"
-else
-  EDITION="standard (mcp-plugin only)"
-fi
-
 if [ "$TARGET" = "$HOME" ]; then
   SCOPE="global (~/.cursor)"
 else
@@ -57,7 +47,7 @@ else
 fi
 TARGET="$(cd "$TARGET" && pwd)"
 
-echo "Installing Shiplight Cursor plugins ($EDITION)..."
+echo "Installing Shiplight Cursor plugin..."
 echo "  Destination: $TARGET/.cursor"
 echo ""
 read -r -p "Proceed with installation? [Y/n] " CONFIRM
@@ -68,10 +58,7 @@ if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
 fi
 echo ""
 
-# --- mcp-plugin: MCP config + /verify skill ---
-echo "  Installing mcp-plugin..."
-
-# Merge MCP config (add server without overwriting existing config)
+# --- MCP config ---
 MCP_FILE="$TARGET/.cursor/mcp.json"
 mkdir -p "$TARGET/.cursor"
 
@@ -81,11 +68,9 @@ if ! command -v jq &>/dev/null; then
 fi
 
 if [ -f "$MCP_FILE" ]; then
-  # Back up original before merging
   cp "$MCP_FILE" "$MCP_FILE.bak"
   echo "    Backed up -> $MCP_FILE.bak"
 
-  # Merge new server into existing config
   jq -s '.[0] * {mcpServers: (.[0].mcpServers + .[1].mcpServers)}' \
     "$MCP_FILE.bak" "$SCRIPT_DIR/plugins/mcp-plugin/.mcp.json" > "$MCP_FILE"
   echo "    MCP config -> merged into $MCP_FILE"
@@ -94,57 +79,26 @@ else
   echo "    MCP config -> $MCP_FILE"
 fi
 
-# Copy verify skill
-VERIFY_SKILL="$TARGET/.cursor/skills/verify/SKILL.md"
-mkdir -p "$(dirname "$VERIFY_SKILL")"
-if [ -f "$VERIFY_SKILL" ]; then
-  cp "$VERIFY_SKILL" "$VERIFY_SKILL.bak"
-  echo "    Backed up -> $VERIFY_SKILL.bak"
-fi
-cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/verify/SKILL.md" "$VERIFY_SKILL"
-echo "    /verify skill -> $VERIFY_SKILL"
+# --- Skills ---
+SKILLS="verify create_tests cloud"
 
-# Copy create_tests skill
-CREATE_TESTS_SKILL="$TARGET/.cursor/skills/create_tests/SKILL.md"
-mkdir -p "$(dirname "$CREATE_TESTS_SKILL")"
-if [ -f "$CREATE_TESTS_SKILL" ]; then
-  cp "$CREATE_TESTS_SKILL" "$CREATE_TESTS_SKILL.bak"
-  echo "    Backed up -> $CREATE_TESTS_SKILL.bak"
-fi
-cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/create_tests/SKILL.md" "$CREATE_TESTS_SKILL"
-echo "    /create_tests skill -> $CREATE_TESTS_SKILL"
-
-# --- cloud-plugin: MCP config + /shiplight skill ---
-if [ "$ALL" = true ]; then
-  echo "  Installing cloud-plugin..."
-
-  # Merge cloud MCP server into config
-  if [ -f "$MCP_FILE" ]; then
-    cp "$MCP_FILE" "$MCP_FILE.bak"
-    jq -s '.[0] * {mcpServers: (.[0].mcpServers + .[1].mcpServers)}' \
-      "$MCP_FILE.bak" "$SCRIPT_DIR/plugins/cloud-plugin/.mcp.json" > "$MCP_FILE"
-    echo "    MCP config -> merged cloud server into $MCP_FILE"
+for skill in $SKILLS; do
+  SKILL_FILE="$TARGET/.cursor/skills/$skill/SKILL.md"
+  mkdir -p "$(dirname "$SKILL_FILE")"
+  if [ -f "$SKILL_FILE" ]; then
+    cp "$SKILL_FILE" "$SKILL_FILE.bak"
+    echo "    Backed up -> $SKILL_FILE.bak"
   fi
-
-  CLOUD_SKILL="$TARGET/.cursor/skills/shiplight/SKILL.md"
-  mkdir -p "$(dirname "$CLOUD_SKILL")"
-  if [ -f "$CLOUD_SKILL" ]; then
-    cp "$CLOUD_SKILL" "$CLOUD_SKILL.bak"
-    echo "    Backed up -> $CLOUD_SKILL.bak"
-  fi
-  cp "$SCRIPT_DIR/plugins/cloud-plugin/skills/shiplight/SKILL.md" "$CLOUD_SKILL"
-  echo "    /shiplight skill -> $CLOUD_SKILL"
-fi
+  cp "$SCRIPT_DIR/plugins/mcp-plugin/skills/$skill/SKILL.md" "$SKILL_FILE"
+  echo "    /$skill skill -> $SKILL_FILE"
+done
 
 echo ""
-echo "Done! Restart Cursor for the plugins to take effect."
+echo "Done! Restart Cursor for the plugin to take effect."
 echo ""
 echo "Next steps:"
 echo "  1. Open Cursor in your project"
 echo "  2. Go to Settings (Cmd+Shift+J) -> MCP to confirm the Shiplight server"
 echo "  3. Use /verify to test UI changes in a browser"
 echo "  4. Use /create_tests to scaffold a local Shiplight test project"
-if [ "$ALL" = true ]; then
-  echo "  5. Use /shiplight to manage cloud test cases"
-  echo "  6. Set your SHIPLIGHT_API_TOKEN in Cursor Settings > MCP for the cloud server"
-fi
+echo "  5. Use /cloud to sync test cases with Shiplight cloud"

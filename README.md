@@ -1,23 +1,16 @@
-# Shiplight Cursor Plugins
+# Shiplight Cursor Plugin
 
-AI-powered test automation for Cursor — browser testing via MCP and cloud test management.
+AI-powered test automation for Cursor — browser testing, YAML test authoring, and cloud test management.
 
-## Plugins
+## Features
 
-### mcp-plugin (free)
-
-Browser automation MCP tools + UI verification and test authoring skills.
-
-- **MCP tools** — live browser sessions, navigation, actions, page inspection, debugging
+- **MCP tools** — live browser sessions, navigation, actions, page inspection, debugging, and cloud sync
 - **Skills:**
   - `/verify` — verify UI changes in the browser using MCP tools
   - `/create_tests` — scaffold a local test project, configure credentials, and write YAML tests by walking through the app in a browser
+  - `/cloud` — sync test cases, templates, and functions with Shiplight cloud
 
-### cloud-plugin (paid)
-
-Cloud test case management via REST API.
-
-- **Skill** — `/shiplight` — create, run, and manage test cases, environments, folders, and accounts via Shiplight API
+Cloud tools (`save_test_case`, `get_test_case`, etc.) are automatically available when `SHIPLIGHT_API_TOKEN` is set in the project's `.env` file.
 
 ## Install
 
@@ -29,11 +22,7 @@ In Cursor chat, run:
 /add-plugin ShiplightAI/cursor-plugin mcp-plugin
 ```
 
-```
-/add-plugin ShiplightAI/cursor-plugin cloud-plugin
-```
-
-After installation, restart Cursor for the plugins to take effect.
+After installation, restart Cursor for the plugin to take effect.
 
 ### Manual Install
 
@@ -41,33 +30,15 @@ After installation, restart Cursor for the plugins to take effect.
 git clone https://github.com/ShiplightAI/cursor-plugin.git
 cd cursor-plugin
 bash install.sh                                        # Install to current directory
-bash install.sh --all                                  # Install all plugins to current directory
 bash install.sh --user                                 # Install to user-level (~/.cursor)
 bash install.sh --project ~/my-project                  # Install to a specific project
 ```
 
 Restart Cursor after setup.
 
-### Verify with Cursor Agent CLI
-
-```bash
-# Check MCP server is detected (mcp-plugin)
-cursor agent mcp list
-
-# Enable and approve the server
-cursor agent mcp enable shiplight
-
-# List available tools
-cursor agent mcp list-tools shiplight
-
-# Test a browser session
-cursor agent --print --approve-mcps \
-  "Open a browser session at https://example.com, get the DOM, take a screenshot, then close the session"
-```
-
 ## Verify
 
-After installing, go to **Cursor Settings** (Cmd+Shift+J) → **MCP** to confirm the Shiplight MCP server is registered (mcp-plugin). Skills `/verify` and `/shiplight` should be available in Cursor chat.
+After installing, go to **Cursor Settings** (Cmd+Shift+J) → **MCP** to confirm the Shiplight MCP server is registered. Skills `/verify`, `/create_tests`, and `/cloud` should be available in Cursor chat.
 
 ## Links
 
