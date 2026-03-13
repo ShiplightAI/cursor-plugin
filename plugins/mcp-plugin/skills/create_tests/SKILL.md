@@ -171,20 +171,22 @@ Because `intent` drives self-healing, it must be specific enough for an agent to
 
 ### Waiting best practices
 
-- **Do NOT use `action: wait` for hard sleeps.** Prefer assertion-based waiting instead.
-- When waiting for a page/element to be ready, use a `VERIFY` with an appropriate timeout — this waits only as long as needed and fails fast if the condition is never met:
+- **Use `WAIT_UNTIL:` for smart waits** — AI checks the condition repeatedly until met or timeout:
 
 ```yaml
-# BAD: hard sleep then verify
-- intent: Wait for page to load
-  action: wait
-  seconds: 3
-- VERIFY: Dashboard is loaded
-  js: "await expect(page.getByTestId('dashboard')).toBeVisible({ timeout: 2000 })"
+- WAIT_UNTIL: Dashboard data has finished loading
+  timeout_seconds: 60
 
-# GOOD: single VERIFY with combined timeout
-- VERIFY: Dashboard is loaded
-  js: "await expect(page.getByTestId('dashboard')).toBeVisible({ timeout: 5000 })"
+- WAIT_UNTIL: Spinner has disappeared
+```
+
+Default timeout is 60 seconds. Each AI condition check takes 10–15 seconds, so set `timeout_seconds` to at least 15. For waits under 10 seconds, use `WAIT:` instead.
+
+- **Use `WAIT:` for short waits (<10s) or when no observable condition exists** (e.g., animations):
+
+```yaml
+- WAIT: Wait for animation to complete
+  seconds: 3
 ```
 
 ### General conventions
