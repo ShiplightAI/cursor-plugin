@@ -5,7 +5,7 @@ description: "Verify UI changes in the browser using Shiplight MCP tools."
 
 # Verify UI Changes
 
-Use the `@shiplightai/mcp` browser tools to visually verify that your code changes look and behave correctly in a real browser.
+Use the Shiplight MCP browser tools to visually verify that your code changes look and behave correctly in a real browser.
 
 ## When to use
 
@@ -17,7 +17,17 @@ Use `/verify` after making UI changes to confirm they render correctly. This is 
 
 ## Steps
 
-Use the MCP tools from `@shiplightai/mcp`. The following steps are a general guideline — adapt based on what makes sense for the specific changes:
+### 0. Check API keys
+
+Before starting, check that the user has at least one LLM API key (`ANTHROPIC_API_KEY` or `GOOGLE_API_KEY`) — these are required for browser actions. If not available, ask:
+
+> To verify UI changes, I need an Anthropic or Google API key. Do you have one?
+
+If provided, append it to the project's `.env` file (create if needed) and tell them: "Saved to `<project>/.env` — make sure `.env` is in your `.gitignore`." The MCP server must be reconnected (`/mcp`) for the new key to take effect.
+
+If the key is already working (e.g. `act` succeeds), skip this step.
+
+The following steps are a general guideline — adapt based on what makes sense for the specific changes:
 
 1. **Understand what changed** — this is the most important step as it determines your test coverage. Analyze the code changes and build a verification plan targeting the key areas, balancing thoroughness with cost.
 
@@ -27,7 +37,7 @@ Use the MCP tools from `@shiplightai/mcp`. The following steps are a general gui
 
 4. **Navigate to the relevant page** — if the change is on a specific route, use `navigate` or pass the full URL in `new_session`.
 
-5. **Inspect the page** — call `inspect_page` to get the DOM tree with element indices and a screenshot. Read the DOM file to understand what's on the page — it provides the element indices needed for `act`. Only view the screenshot file when you need visual information (layout, colors, images).
+5. **Inspect the page** — call `inspect_page` to get the DOM tree with element indices and a screenshot. **Always read the DOM file first** — it provides the element indices needed for `act` and consumes far fewer tokens. Only view the screenshot when you specifically need visual information (layout, colors, images), as screenshots consume significantly more tokens than DOM.
 
 6. **Interact and verify** — use `act` to simulate user actions based on the element indices from `inspect_page`.
 
@@ -54,7 +64,7 @@ If a saved storage state file already exists, use it automatically when creating
 
 ## Tips
 
-- Use `inspect_page` to understand page state. Read the DOM file first; only view the screenshot when you need visual information (layout, colors, images).
+- Use `inspect_page` to understand page state. **Always read the DOM file first** — screenshots consume significantly more tokens. Only view the screenshot when you need visual info.
 - Use `verify` actions inside `act` to assert expected UI state (e.g. text is visible, element exists).
 - If a page takes time to load, use a `wait` action or `wait_for_page_ready` before taking a screenshot.
 - Use `get_browser_console_logs` to catch runtime errors that aren't visible in the UI.

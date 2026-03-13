@@ -14,39 +14,36 @@ Use `/create_tests` when the user wants to:
 - Add YAML tests for a web application
 - Set up authentication for a test project
 
-## Prerequisites
-
-- **Node.js** >= 22
-- **AI API key** — at least one of `ANTHROPIC_API_KEY` or `GOOGLE_API_KEY`
-
 ## Steps
 
-### 1. Gather project info
+### 1. Check API keys
+
+Before anything else, check that the user has at least one LLM API key (`ANTHROPIC_API_KEY` or `GOOGLE_API_KEY`) — these are required for browser actions. Ask the user:
+
+> To create tests, I need an Anthropic or Google API key for AI-powered browser interactions. Do you have one of these?
+
+If provided, save it to the project's `.env` file (create if needed) and tell them: "Saved to `<project>/.env` — make sure `.env` is in your `.gitignore`." The MCP server must be reconnected (`/mcp`) for new keys to take effect.
+
+If the key is already available (e.g. `act` tool works without error), skip this step.
+
+### 2. Gather project info
 
 Ask the user for:
 - **Project path** — where to create the project (e.g., `./my-tests`)
 - **Target URL** — the web app to test (e.g., `https://app.example.com`)
 - **Login credentials** (if the app requires authentication) — URL, username, password, etc
 
-### 2. Scaffold the project
+**Cloud shortcut:** If cloud MCP tools are available (i.e. `SHIPLIGHT_API_TOKEN` is set), use the `/cloud` skill to fetch environments and test accounts from the cloud — this can pre-fill the target URL and login credentials, saving the user from entering them manually.
 
-Call `init_local_project` with the absolute project path. This creates:
+### 3. Scaffold the project
+
+Call `scaffold_project` with the absolute project path. This creates:
 - `package.json` with `shiplightai` and `@playwright/test`
 - `playwright.config.ts` with `shiplightConfig()`
 - `.env.example` with placeholder API keys
 - `.gitignore` and `tests/` directory
 
-### 3. Configure API keys
-
-Create a `.env` file in the project directory with at least one AI API key:
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
-# or
-GOOGLE_API_KEY=...
-```
-
-Ask the user which API key they want to use if not already known.
+Save the API key from step 1 to the project's `.env` file.
 
 ### 4. Install dependencies
 
@@ -95,7 +92,7 @@ For each test the user wants to create:
 
 1. **Open a browser session** — call `new_session` with the app's `starting_url`.
 2. **Walk through the flow** — use `inspect_page` to see the page, then `act` to perform each action. This captures locators from the response.
-3. **Capture locators** — use `get_locator` for additional element info when needed.
+3. **Capture locators** — use `get_locators` for additional element info when needed.
 4. **Build the YAML** — construct the `.test.yaml` content following the best practices below.
 5. **Save and validate** — write the `.test.yaml` file, then call `validate_yaml_test` with the file path to check locator coverage (minimum 50% required).
 6. **Close the session** — call `close_session` when done.
@@ -120,41 +117,44 @@ These best practices bridge the YAML language spec and the action catalog to hel
 
 ### Statement type selection
 
-- **ACTION is the default.** Capture locators via MCP tools (`act`, `get_locator`) during browser sessions, then write ACTION statements. ACTIONs replay deterministically (~1s).
+- **ACTION is the default.** Capture locators via MCP tools (`act`, `get_locators`) during browser sessions, then write ACTION statements. ACTIONs replay deterministically (~1s).
 - **DRAFT is a last resort.** Only use DRAFT when the locator is genuinely unknowable at authoring time. DRAFTs are slow (~5-10s each, AI resolution at runtime). Tests with too many DRAFTs are rejected by `validate_yaml_test`.
 - **VERIFY for assertions.** Use `VERIFY:` for all assertions. Do not write assertion DRAFTs like `"Check that the button is visible"`.
 - **URL for navigation.** Use `URL: /path` for navigation instead of `action: go_to_url`.
 - **CODE for scripting.** Use `CODE:` for network mocking, localStorage manipulation, page-level scripting. Not for clicks, assertions, or navigation.
 
-### ACTION: `js:` shorthand vs structured format
+### The `intent` field
 
-Every ACTION has an `intent` (ground truth) and a cache (`js` or `action`/`locator`). When the cache fails, the agent self-heals using the intent.
+`intent` is the **intent** of the step — it defines _what_ the step should accomplish. The `action`/`locator` or `js` fields are **caches** of _how_ to do it. When a cache fails (stale locator, changed DOM), the AI agent uses `intent` to re-inspect the page and regenerate the action from scratch.
 
-**Prefer `js:` shorthand** for simple actions — it's more readable, more flexible, and the agent writes exactly the Playwright code it wants:
+Because `intent` drives self-healing, it must be specific enough for an agent to act on without any other context. Describe the **user goal**, not the DOM element — avoid element indices, CSS selectors, or positional references that break when the UI changes:
 
 ```yaml
-# Click
-- intent: Click the login button
-  js: "await page.getByRole('button', { name: 'Login' }).first().click({ timeout: 5000 })"
+# BAD: vague, agent can't re-derive the action
+- intent: Click button
 
-# Press key
-- intent: Press Escape to close dialog
-  js: "await page.keyboard.press('Escape')"
+# BAD: tied to DOM structure that can change
+- intent: Click the 3rd button in the form
+- intent: Click element at index 42
 
-# Hover
-- intent: Hover over the menu
-  js: "await page.getByRole('navigation').first().hover({ timeout: 5000 })"
+# GOOD: describes the user goal, stable across UI changes
+- intent: Click the Submit button to save the new project
+  action: click
+  locator: "getByRole('button', { name: 'Submit' })"
 ```
 
-**Do NOT use `action: click`**, `action: hover`, or `action: press` — use `js:` shorthand instead. These are simple Playwright one-liners that are more readable and flexible as `js:`.
+### ACTION: structured format vs `js:` shorthand
 
-**Use structured format** for actions that plain Playwright code doesn't handle well: `input_text` (handles clearing/focusing), `select_dropdown_option` (handles option resolution), `upload_file` (handles file input), `scroll` (handles scroll logic).
+**Use structured format by default** for all supported actions. Read the MCP resource `shiplight://schemas/action-entity` for the full list of available actions and their parameters.
+
+**Use `js:` only when the action doesn't map to a supported action** — e.g., complex multi-step interactions, custom Playwright API calls, or chained operations:
 
 ```yaml
-- intent: Enter email address
-  action: input_text
-  locator: "getByPlaceholder('Email')"
-  text: "user@example.com"
+- intent: Drag slider to 50% position
+  js: "await page.getByRole('slider').first().fill('50')"
+
+- intent: Wait for network idle after form submit
+  js: "await page.waitForLoadState('networkidle')"
 ```
 
 ### `js:` coding rules
@@ -163,11 +163,10 @@ Every ACTION has an `intent` (ground truth) and a cache (`js` or `action`/`locat
 - Always include `{ timeout: 5000 }` on actions for predictable timing
 - The `intent` is critical — it's the input for self-healing when `js` fails
 - `page`, `agent`, and `expect` are available in scope
-- Do NOT include `xpath` when using `js:` — xpath is only needed when an ACTION has neither `locator` nor `js`
 
 ### VERIFY best practices
 
-- Always set a short timeout (e.g., `{ timeout: 2000 }`) on `js:` assertions that have an AI fallback, so stale locators fall back to AI quickly instead of waiting the default 10s
+- Always set a short timeout (e.g., `{ timeout: 2000 }`) on `js:` assertions that have an AI fallback, so stale locators fall back to AI quickly instead of waiting the default 5s
 - Always use `VERIFY:` shorthand — do not use `action: verify` directly
 
 ### Waiting best practices
@@ -177,8 +176,8 @@ Every ACTION has an `intent` (ground truth) and a cache (`js` or `action`/`locat
 
 ```yaml
 # BAD: hard sleep then verify
-- action: wait
-  intent: Wait for page to load
+- intent: Wait for page to load
+  action: wait
   seconds: 3
 - VERIFY: Dashboard is loaded
   js: "await expect(page.getByTestId('dashboard')).toBeVisible({ timeout: 2000 })"
@@ -188,17 +187,11 @@ Every ACTION has an `intent` (ground truth) and a cache (`js` or `action`/`locat
   js: "await expect(page.getByTestId('dashboard')).toBeVisible({ timeout: 5000 })"
 ```
 
-- If a hard sleep is truly necessary (e.g., waiting for an animation or background process with no observable state change), use `CODE:`:
-
-```yaml
-- CODE: "await page.waitForTimeout(3000)"
-```
-
 ### General conventions
 
 - Put `intent` first in ACTION statements for readability
 - `xpath` is only needed when an ACTION has neither `locator` nor `js`.
-- Single-test vs Suite: isolated test → single-test file; shared setup/teardown → suite; serial execution (shared state) → suite with `serial: true`; same structure, different data → `parameters`
+- Single-test vs Suite: isolated test → single-test file; shared setup/teardown or sequential tests with shared browser state → suite; same structure, different data → `parameters`
 
 ## Project Structure
 

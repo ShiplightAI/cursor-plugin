@@ -1,70 +1,64 @@
 ---
-name: shiplight
-description: "Shiplight test case creation, runs, environments, folders, and account management."
+name: cloud
+description: "Sync local test cases, templates, and functions with Shiplight cloud. Manage test runs, environments, folders, and accounts."
 ---
 
 # Shiplight Cloud
 
-Manage test cases, test runs, environments, folders, and accounts via the Shiplight REST API.
+Sync local YAML test cases, templates, and TypeScript functions with the Shiplight cloud using MCP tools. Manage test runs, environments, folders, and accounts via the REST API.
 
-## API Setup
+## Setup
 
-**Base URL:** `https://api.shiplight.ai` (override with `API_BASE_URL` env variable for non-production environments)
+A `SHIPLIGHT_API_TOKEN` is required. If cloud MCP tools (`save_test_case`, `get_test_case`, etc.) are not in the tool list, the token is missing.
 
-**Authentication:** All requests require:
+Tell the user:
+> Cloud tools are not available. Get your API token from https://app.shiplight.ai/settings/api-tokens, set `SHIPLIGHT_API_TOKEN` in your project's `.env` file, then reconnect MCP (`/mcp`).
+
+If the user provides a token, append it to the project's `.env` file (create if needed) and tell them: "Saved to `<project>/.env` — make sure `.env` is in your `.gitignore`. Reconnect MCP (`/mcp`) to activate cloud tools."
+
+All REST API calls require:
 ```
 Authorization: Bearer $SHIPLIGHT_API_TOKEN
 ```
 
-### Token Resolution Order
-
-Resolve `SHIPLIGHT_API_TOKEN` using this priority:
-
-1. **Local credentials file** — read `~/.shiplight/credentials.json` → use the `token` field
-2. **Environment variable** — check `$SHIPLIGHT_API_TOKEN`
-3. **`.env` file** — check `.env` in the current project directory
-
-If none found, tell the user:
-> No Shiplight API token found. Go to Cursor Settings > MCP, find the Shiplight Cloud server, and click **Authenticate** to log in. Then retry this command.
-
-### Saving the Token After OAuth
-
-After the user authenticates via MCP settings, the MCP server provides a `get_api_token` tool. Call it to retrieve the token, then save it locally:
-
-```bash
-mkdir -p ~/.shiplight && cat > ~/.shiplight/credentials.json << 'EOF'
-{"token": "<TOKEN_FROM_MCP>"}
-EOF
-chmod 600 ~/.shiplight/credentials.json
-```
-
-### Handling Expired Tokens
-
-If any API call returns **401**, the token is expired or revoked:
-
-1. Delete the local credentials: `rm ~/.shiplight/credentials.json`
-2. Tell the user: "Your API token has expired. Go to Cursor Settings > MCP, find Shiplight Cloud, and click **Re-authenticate**."
-3. After re-auth, call `get_api_token` again and re-save to `~/.shiplight/credentials.json`.
-
-**Optional headers:**
-- `organization-id` — required for some endpoints with admin tokens
-
 ## Error Handling
 
-| HTTP Status | Meaning              | Action                              |
-|-------------|----------------------|-------------------------------------|
-| 401         | Invalid/expired token | Delete `~/.shiplight/credentials.json`, prompt user to re-authenticate via Cursor Settings > MCP |
-| 403         | Insufficient permissions | Inform user of permission issue |
-| 404         | Resource not found   | Report missing resource             |
-| 422         | Validation error     | Show validation message to user     |
-| 429         | Rate limited         | Retry with exponential backoff      |
-| 5xx         | Server error         | Suggest retrying or checking status |
+| Error | Action |
+|-------|--------|
+| 401 Unauthorized | Token is invalid or expired — ask user to check `SHIPLIGHT_API_TOKEN` in `.env` |
+| 403 Forbidden | Insufficient permissions — inform user |
+| 404 Not Found | Resource not found — report to user |
+| 422 Validation | Show validation message to user |
+| Tool not found | Token is missing — guide user through setup above |
 
 ---
 
-## Test Cases
+## MCP Tools
 
-### List Test Cases
+These tools are available when `SHIPLIGHT_API_TOKEN` is set. Prefer `file_path` over passing content directly (saves tokens). Always use `output_format: 'yaml'` for `get_test_case`.
+
+- **Upload:** `save_test_case`, `save_template`, `save_function`
+- **Download:** `get_test_case`, `get_template`, `get_function`
+
+### ID Tracking
+
+After uploading, add the returned cloud ID to the local file so future saves update instead of creating duplicates:
+
+| Artifact | Local file | ID field |
+|----------|-----------|----------|
+| Test case | `*.test.yaml` | `test_case_id: 123` (top-level YAML field) |
+| Template | `templates/*.yaml` | `template_id: 45` (top-level YAML field) |
+| Function | `helpers/*.ts` | `@function_id 67` (JSDoc tag per export) |
+
+---
+
+## REST API
+
+Base URL: `https://api.shiplight.ai`
+
+### Test Cases
+
+#### List Test Cases
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -73,7 +67,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** array of `{ id, title, test_flow, folder_id }`
 
-### Get Test Case
+#### Get Test Case
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -82,13 +76,9 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** `{ id, title, test_flow, folder_id }`
 
-### Create / Sync Test Case
+#### Update Test Case (partial)
 
-**Use the `save_test_case` MCP tool** instead of raw API calls. It handles YAML→JSON conversion, template resolution, and function linking automatically.
-
-### Update Test Case (partial)
-
-For partial updates that don't involve `test_flow` (e.g. renaming), use the REST API directly:
+For partial updates that don't involve `test_flow` (e.g. renaming):
 
 ```bash
 curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -105,9 +95,7 @@ curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 | `test_flow` | object | Updated TestFlow JSON object (use `save_test_case` MCP tool instead for YAML sources) |
 | `folder_id` | number | Move to a different folder |
 
-**Response:** `{ success, message, test_case_id, updated_at }`
-
-### Run Test Case
+#### Run Test Case
 
 Triggers cloud execution. Returns a `test_run_id` for polling.
 
@@ -129,9 +117,9 @@ curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 ---
 
-## Test Runs
+### Test Runs
 
-### List Test Runs
+#### List Test Runs
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -149,7 +137,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** array of `{ id, status, result, trigger, start_time, end_time, duration, total_test_case_count, passed_test_case_count, failed_test_case_count }`
 
-### Get Test Run Details
+#### Get Test Run Details
 
 **Note:** This endpoint has **no `/v1/` prefix**.
 
@@ -168,7 +156,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 }
 ```
 
-### Get Test Case Result
+#### Get Test Case Result
 
 **Note:** This endpoint has **no `/v1/` prefix**.
 
@@ -183,9 +171,9 @@ The `video`, `trace`, and `report_s3_uri` fields contain S3 URIs — use the Art
 
 ---
 
-## Environments
+### Environments
 
-### List Environments
+#### List Environments
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -194,7 +182,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** array of `{ id, name, url }`
 
-### Get Environment
+#### Get Environment
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -205,9 +193,9 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 ---
 
-## Test Accounts
+### Test Accounts
 
-### List Test Accounts
+#### List Test Accounts
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -218,7 +206,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** array of `{ id, name, username, environmentId, loginConfig }`
 
-### Get Test Account
+#### Get Test Account
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -227,7 +215,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** `{ id, name, username, password, environmentId, loginConfig }`
 
-### Create Test Account
+#### Create Test Account
 
 ```bash
 curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -255,13 +243,11 @@ curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 | `environmentId` | number | yes | Environment this account belongs to |
 | `loginConfig` | object | no | Login automation config (`site_url` + `account` credentials) |
 
-**Response:** the created test account object
-
 ---
 
-## Folders
+### Folders
 
-### List All Folders
+#### List All Folders
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -272,7 +258,7 @@ Optional query: `?search=keyword`
 
 **Response:** array of `{ id, name, description, parentId, pathIds }`
 
-### List Folders by Parent
+#### List Folders by Parent
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -283,7 +269,7 @@ Omit `parentId` entirely for root-level folders.
 
 **Response:** array of `{ id, name, description, parentId }`
 
-### Get Folder
+#### Get Folder
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -292,7 +278,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** `{ id, name, description, parentId, pathIds }`
 
-### Create Folder
+#### Create Folder
 
 ```bash
 curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -309,15 +295,13 @@ curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 | `description` | string | no | Folder description |
 | `parentId` | number \| null | no | Parent folder ID (`null` for root) |
 
-**Response:** the created folder object
-
 ---
 
-## Templates (Reusable Steps)
+### Templates (Reusable Steps)
 
 Reusable test step sequences that can be referenced from test cases via `template:` in YAML or `reference_id` in the cloud. The API uses the legacy name "reusable-steps".
 
-### Get Template
+#### Get Template
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -326,11 +310,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** `{ id, name, description, statements }`
 
-### Create / Sync Template
-
-**Use the `save_template` MCP tool** instead of raw API calls. It handles YAML→JSON conversion automatically.
-
-### Update Template (partial)
+#### Update Template (partial)
 
 For partial updates that don't involve `statements` (e.g. renaming):
 
@@ -349,15 +329,13 @@ curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 | `description` | string | What the template does |
 | `statements` | array | Statement objects (use `save_template` MCP tool instead for YAML sources) |
 
-**Response:** `{ id, name, description, statements }`
-
 ---
 
-## Test Functions
+### Test Functions
 
 Custom TypeScript functions that can be called from test cases via `call: "file#export"` in YAML.
 
-### Get Test Function
+#### Get Test Function
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -366,17 +344,11 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** `{ id, name, description, code, status }`
 
-### Create / Sync Test Function
-
-**Use the `save_function` MCP tool** instead of raw API calls. It reads the TypeScript file, extracts exports and `@function_id` JSDoc tags, and creates/updates functions automatically.
-
-**Response:** `{ id, name, description, code, status }`
-
 ---
 
-## Test Generation
+### Test Generation
 
-### Generate Test from Goal
+#### Generate Test from Goal
 
 Uses AI to generate a test case from a natural language goal.
 
@@ -411,11 +383,11 @@ curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 ---
 
-## Agent Session Video Upload
+### Agent Session Video Upload
 
 Upload a locally saved agent session recording to S3 and get a permanent public URL for embedding in PRs or sharing. Use this after a successful verification session where `record_video: true` was set — `close_session` returns a `local_video_path`. **Only upload on successful verification.** Skip if verification failed.
 
-### Get Video Upload URL
+#### Get Video Upload URL
 
 ```bash
 curl -s -X POST \
@@ -425,18 +397,12 @@ curl -s -X POST \
   https://api.shiplight.ai/v1/agent/video-upload-url
 ```
 
-**Request body:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `filename` | string | yes | Filename of the video (e.g. `recording.webm`) |
-
 **Response:** `{ uploadUrl, videoUrl }`
 
 - `uploadUrl` — presigned S3 URL for upload, expires in **5 minutes**
 - `videoUrl` — permanent public URL, never expires
 
-### Upload Video to S3
+#### Upload Video to S3
 
 ```bash
 curl -X PUT \
@@ -445,17 +411,17 @@ curl -X PUT \
   "$UPLOAD_URL"
 ```
 
-The `videoUrl` from the Get Video Upload URL step is the permanent public URL. Embed it in the PR description:
+The `videoUrl` from the previous step is the permanent public URL. Embed it in the PR description:
 
 ```
-🎥 [Verification recording]($VIDEO_URL)
+[Verification recording]($VIDEO_URL)
 ```
 
 ---
 
-## Artifacts
+### Artifacts
 
-### Download S3 File
+#### Download S3 File
 
 Download test artifacts (videos, traces, reports) referenced by S3 URIs in test case results.
 
@@ -471,6 +437,18 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 ---
 
 ## Workflows
+
+### Sync local project to cloud
+
+1. Find all `.test.yaml` files in the project
+2. For each file, call `save_test_case` with `file_path`
+3. Add the returned `test_case_id` to the YAML if not already present
+4. Repeat for templates (`save_template`) and functions (`save_function`)
+
+### Download test case from cloud
+
+1. Call `get_test_case` with `test_case_id` and `output_format: 'yaml'`
+2. Save the returned YAML to a `.test.yaml` file
 
 ### Create a test case end-to-end
 
@@ -491,14 +469,6 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 1. `GET /v1/environments` → get environment ID; optionally `GET /v1/test-accounts?environmentId=<id>` for account
 2. `POST /v1/test-batch-gen-tasks/create` → submit `title`, `startingUrl`, `goal`, `environmentId`, `testAccountGroup`, `creation_mode: "SINGLE"`
 3. Response contains `{ testCase: { id, test_flow } }` — run it or inspect the flow
-
-### Sync local artifacts to cloud
-
-Use the MCP sync tools — they handle YAML→JSON conversion, ID tracking, and template resolution:
-
-1. **Test cases**: `save_test_case` MCP tool — pass the YAML content, it creates or updates based on `test_case_id` in the YAML metadata
-2. **Templates**: `save_template` MCP tool — pass the YAML content, it creates or updates based on `template_id` in the YAML metadata
-3. **Functions**: `save_function` MCP tool — pass the TypeScript file path, it extracts exports and syncs based on `@function_id` JSDoc tags
 
 ### Download test artifacts
 
