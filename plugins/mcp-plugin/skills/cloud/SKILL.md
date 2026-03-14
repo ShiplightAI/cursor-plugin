@@ -37,8 +37,9 @@ Authorization: Bearer $SHIPLIGHT_API_TOKEN
 
 These tools are available when `SHIPLIGHT_API_TOKEN` is set. Prefer `file_path` over passing content directly (saves tokens). Always use `output_format: 'yaml'` for `get_test_case`.
 
-- **Upload:** `save_test_case`, `save_template`, `save_function`
+- **Upload:** `save_test_case`, `save_test_account`, `save_template`, `save_function`
 - **Download:** `get_test_case`, `get_template`, `get_function`
+- **Account:** `save_test_account` — create/update test account with optional `storage_state_path` to upload local browser session to cloud
 
 ### ID Tracking
 
@@ -190,6 +191,55 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 ```
 
 **Response:** `{ id, name, url }`
+
+---
+
+### Variables
+
+Environment-scoped variables — the cloud equivalent of `variables` in `playwright.config.ts`. Use `isSensitive: true` for secrets (passwords, API keys) so they're masked in logs.
+
+#### List Variables
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  "https://api.shiplight.ai/v1/variables?environmentId=1"
+```
+
+**Response:** array of `{ id, name, value, environment_id, is_sensitive }`
+
+#### Create Variable
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "username", "value": "testuser@example.com", "environmentId": 1}' \
+  https://api.shiplight.ai/v1/variables
+```
+
+For sensitive values:
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "password", "value": "secret123", "environmentId": 1, "isSensitive": true}' \
+  https://api.shiplight.ai/v1/variables
+```
+
+#### Update Variable
+
+```bash
+curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "new-value"}' \
+  https://api.shiplight.ai/v1/variables/42
+```
+
+#### Delete Variable
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/variables/42
+```
 
 ---
 
@@ -440,10 +490,11 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 ### Sync local project to cloud
 
-1. Find all `.test.yaml` files in the project
-2. For each file, call `save_test_case` with `file_path`
-3. Add the returned `test_case_id` to the YAML if not already present
-4. Repeat for templates (`save_template`) and functions (`save_function`)
+1. Sync environment variables: read `variables` from `playwright.config.ts`, create matching variables via `POST /v1/variables` with the appropriate `environmentId`
+2. Sync test accounts: call `save_test_account` with credentials and `storage_state_path` (if the local project uses storageState-based auth)
+3. Find all `.test.yaml` files, call `save_test_case` with `file_path` for each
+4. Add the returned `test_case_id` to the YAML if not already present
+5. Repeat for templates (`save_template`) and functions (`save_function`)
 
 ### Download test case from cloud
 
