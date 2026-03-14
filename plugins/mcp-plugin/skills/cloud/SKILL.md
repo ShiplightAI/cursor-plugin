@@ -166,9 +166,11 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/test-case-results/789
 ```
 
-**Response:** `{ id, test_case_id, test_run_id, result, status, duration, environment_name, environment_url, video, trace, report_s3_uri, error }`
+**Response:** `{ id, test_case_id, test_run_id, result, status, duration, environment_name, environment_url, video, trace, report_s3_uri, report, error }`
 
 The `video`, `trace`, and `report_s3_uri` fields contain S3 URIs — use the Artifacts endpoint to download them.
+
+The `report` field contains step-by-step execution details in `report[0].resultJson` — each step has `description`, `status`, `message`, `duration`, and artifact S3 URIs (`screenshot_s3_path`, `messages_s3_path`, etc.).
 
 ---
 
