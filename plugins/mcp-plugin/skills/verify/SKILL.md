@@ -49,7 +49,66 @@ The following steps are a general guideline — adapt based on what makes sense 
    - Any console errors or visual issues found
    - Screenshots showing the verified state
 
-9. **Close the session** — call `close_session` when done.
+9. **Close the session** — call `close_session` when done. It returns `local_video_path` and `local_trace_path`.
+
+10. **Generate the local report** — if the session was started with `record_evidence: true`, call `generate_html_report` with the local paths so the report works immediately on disk:
+
+    ```json
+    {
+      "session_id": "<session_id>",
+      "local_video_path": "<local_video_path from close_session>",
+      "local_trace_path": "<local_trace_path from close_session>",
+      "title": "...",
+      "summary": "...",
+      "checks": [...]
+    }
+    ```
+
+    Show the returned `file_path` to the user so they can open and review it.
+
+11. **Upload the report for sharing** — when the user wants a shareable link (e.g. to attach to a PR), and `SHIPLIGHT_API_TOKEN` is available:
+
+    ```bash
+    # Get presigned upload URLs for all three files in one call
+    URLS=$(curl -s -X POST \
+      -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "video_filename": "<basename of local_video_path>",
+        "trace_filename": "<basename of local_trace_path>",
+        "report_filename": "report.html"
+      }' \
+      https://api.shiplight.ai/v1/agent/report-upload-urls)
+    # → { video: { uploadUrl, url }, trace: { uploadUrl, url }, report: { uploadUrl, url } }
+
+    # Upload video and trace in parallel
+    curl -s -X PUT -H "Content-Type: video/webm" --upload-file "$LOCAL_VIDEO_PATH" "$VIDEO_UPLOAD_URL" &
+    curl -s -X PUT -H "Content-Type: application/zip" --upload-file "$LOCAL_TRACE_PATH" "$TRACE_UPLOAD_URL" &
+    wait
+
+    # Patch the local HTML with cloud URLs (no need to regenerate)
+    python3 - <<'EOF'
+    import sys, re, urllib.parse
+
+    report_path, video_url, trace_url = sys.argv[1], sys.argv[2], sys.argv[3]
+    with open(report_path) as f:
+        html = f.read()
+    html = re.sub(r'src="file://[^"]*\.webm"', f'src="{video_url}"', html)
+    trace_encoded = urllib.parse.quote(trace_url, safe='')
+    html = html.replace(
+        '<p class="no-trace">Trace will be available after uploading.</p>',
+        f'<a class="trace-btn" href="https://trace.playwright.dev/?trace={trace_encoded}" target="_blank" rel="noopener noreferrer">Open Trace Viewer →</a>'
+    )
+    with open(report_path, 'w') as f:
+        f.write(html)
+    EOF
+    "$REPORT_FILE_PATH" "$VIDEO_URL" "$TRACE_URL"
+
+    # Upload the patched HTML
+    curl -s -X PUT -H "Content-Type: text/html" --upload-file "$REPORT_FILE_PATH" "$REPORT_UPLOAD_URL"
+    ```
+
+    Return the `report.url` from the first curl as the permanent shareable link.
 
 ## Apps that require login
 
