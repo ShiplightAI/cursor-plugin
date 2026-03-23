@@ -5,10 +5,19 @@ AI-powered test automation for Cursor — ship with confidence by letting the ag
 ## Features
 
 - **MCP tools** — gives Cursor a real browser so it can autonomously code, verify in the browser, and iterate — closing the loop without human intervention
-- **Skills** — three commands that cover the full test lifecycle:
+- **Skills** — commands that cover the full test lifecycle and code review:
   - `/verify` — visually confirm UI changes in the browser after a code change
-  - `/create_tests` — generate e2e regression tests from code changes or app exploration
+  - `/create_e2e_tests` — generate e2e regression tests from code changes or app exploration
   - `/cloud` — sync and share regression tests on the cloud platform for scheduled runs, team collaboration, and CI integration
+  - `/review` — general code review covering correctness, readability, and maintainability
+  - `/design-review` — review architecture and design patterns
+  - `/security-review` — review for security vulnerabilities and best practices
+  - `/privacy-review` — review for privacy concerns and data handling
+  - `/compliance-review` — review for regulatory and compliance requirements
+  - `/resilience-review` — review for fault tolerance and error handling
+  - `/performance-review` — review for performance bottlenecks and optimization
+  - `/seo-review` — review for SEO best practices
+  - `/geo-review` — review for internationalization and localization
 
 ## Install
 
@@ -24,7 +33,7 @@ Restart Cursor after setup.
 
 ## Verify Installation
 
-Go to **Cursor Settings** (Cmd+Shift+J) → **MCP** to confirm the Shiplight MCP server is registered. Skills `/verify`, `/create_tests`, and `/cloud` should be available in Cursor chat.
+Go to **Cursor Settings** (Cmd+Shift+J) → **MCP** to confirm the Shiplight MCP server is registered. Skills `/verify`, `/create_e2e_tests`, `/cloud`, and the review skills should be available in Cursor chat.
 
 ## Links
 

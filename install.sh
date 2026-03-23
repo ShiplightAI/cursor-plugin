@@ -80,7 +80,7 @@ else
 fi
 
 # --- Skills ---
-SKILLS="verify create_tests cloud"
+SKILLS="verify create_e2e_tests cloud review design-review security-review privacy-review compliance-review resilience-review performance-review seo-review geo-review"
 
 for skill in $SKILLS; do
   SKILL_FILE="$TARGET/.cursor/skills/$skill/SKILL.md"
@@ -100,5 +100,5 @@ echo "Next steps:"
 echo "  1. Open Cursor in your project"
 echo "  2. Go to Settings (Cmd+Shift+J) -> MCP to confirm the Shiplight server"
 echo "  3. Use /verify to test UI changes in a browser"
-echo "  4. Use /create_tests to scaffold a local Shiplight test project"
+echo "  4. Use /create_e2e_tests to scaffold a local Shiplight test project"
 echo "  5. Use /cloud to sync test cases with Shiplight cloud"
