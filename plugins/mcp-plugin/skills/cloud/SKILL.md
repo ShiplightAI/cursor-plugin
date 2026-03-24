@@ -398,43 +398,6 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 ---
 
-### Test Generation
-
-#### Generate Test from Goal
-
-Uses AI to generate a test case from a natural language goal.
-
-```bash
-curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Login Flow",
-    "startingUrl": "https://app.example.com/login",
-    "goal": "Log in with valid credentials and verify dashboard loads",
-    "environmentId": 1,
-    "testAccountGroup": { "type": "Specific", "account_ids": [1] },
-    "folderId": 1,
-    "creation_mode": "SINGLE"
-  }' \
-  https://api.shiplight.ai/v1/test-batch-gen-tasks/create
-```
-
-**Request body:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `title` | string | yes | Test case name |
-| `startingUrl` | string | yes | URL to start testing from |
-| `goal` | string | yes | Natural language test goal |
-| `environmentId` | number | yes | Environment to generate against |
-| `testAccountGroup` | object | yes | Account config (`type` + `account_ids`) |
-| `folderId` | number | no | Folder to place generated test in |
-| `creation_mode` | string | yes | Always `"SINGLE"` |
-
-**Response:** `{ testCase: { id, title, test_flow } }`
-
----
-
 ### Artifacts
 
 #### Download S3 File
@@ -448,7 +411,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Query:** `uri` (string, required) — S3 URI from test result fields (`video`, `trace`, `report_s3_uri`).
 
-**Response:** file contents (JSON or plain text depending on file type)
+**Response:** raw file contents with appropriate content-type. For binary files (videos, traces), use `curl -o <output_file>` to save to disk.
 
 ---
 
@@ -456,36 +419,23 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 ### Sync local project to cloud
 
-1. Sync environment variables: read `variables` from `playwright.config.ts`, create matching variables via `POST /v1/variables` with the appropriate `environmentId`
-2. Sync test accounts: call `save_test_account` with credentials and `storage_state_path` (if the local project uses storageState-based auth)
-3. Find all `.test.yaml` files, call `save_test_case` with `file_path` for each
-4. Add the returned `test_case_id` to the YAML if not already present
-5. Repeat for templates (`save_template`) and functions (`save_function`)
+1. **Sync environment variables:** read `variables` from `playwright.config.ts`. List existing cloud variables with `GET /v1/variables?environmentId=<id>` first — create only variables that don't exist yet (`POST`), update ones that do (`PUT`). This avoids duplicates on repeated syncs.
+2. **Sync test accounts:** call `save_test_account` with credentials and `storage_state_path` (if the local project uses storageState-based auth)
+3. **Sync test cases:** find all `.test.yaml` files, call `save_test_case` with `file_path` for each. If the file already has a `test_case_id`, it updates; if not, it creates and returns an ID.
+4. **Track IDs:** add the returned `test_case_id` to the YAML if not already present
+5. **Sync templates and functions:** repeat with `save_template` and `save_function`
 
 ### Download test case from cloud
 
 1. Call `get_test_case` with `test_case_id` and `output_format: 'yaml'`
 2. Save the returned YAML to a `.test.yaml` file
 
-### Create a test case end-to-end
-
-1. `GET /v1/environments` → pick an environment ID
-2. (Optional) `GET /v1/test-folders/all` → pick a folder ID
-3. (Optional) `GET /v1/test-accounts?environmentId=<id>` → pick a test account
-4. `POST /v1/test-cases` → create with `title`, `test_flow`, `folder_id`, `environment_configs`
-
-### Run a test and get results
+### Run a test in the cloud and get results
 
 1. `POST /v1/test-run/test-case/<id>` → triggers run, returns `{ id, test_case_result_ids }`
 2. Poll `GET /run-results/<run_id>` every 10-15s until `testRun.status === "COMPLETED"` (**no `/v1/` prefix**)
 3. `GET /test-case-results/<result_id>` → get `result`, `duration`, `error`, `video`, `trace` (**no `/v1/` prefix**)
 4. If failed: check `error` field. Download artifacts with `GET /v1/s3/file?uri=<S3_URI>`
-
-### Generate a test case from a goal
-
-1. `GET /v1/environments` → get environment ID; optionally `GET /v1/test-accounts?environmentId=<id>` for account
-2. `POST /v1/test-batch-gen-tasks/create` → submit `title`, `startingUrl`, `goal`, `environmentId`, `testAccountGroup`, `creation_mode: "SINGLE"`
-3. Response contains `{ testCase: { id, test_flow } }` — run it or inspect the flow
 
 ### Download test artifacts
 

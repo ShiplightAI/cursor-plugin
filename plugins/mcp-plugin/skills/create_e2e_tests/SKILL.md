@@ -9,7 +9,7 @@ A spec-driven workflow that front-loads testing expertise through structured pla
 
 ## When to use
 
-Use `/shiplight:create_e2e_tests` when the user wants to:
+Use `create_e2e_tests` when the user wants to:
 - Create a new local test project from scratch
 - Add YAML tests for a web application
 - Set up authentication for a test project
@@ -58,7 +58,7 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 
 1. **Get project path** — ask where to create the test project (e.g., `./my-tests`). All artifacts and tests will live here. Create the `test-specs/` directory.
 
-   If cloud MCP tools are available (`SHIPLIGHT_API_TOKEN` is set), use the `/shiplight:cloud` skill to fetch environments and test accounts — this can pre-fill the target URL and credentials.
+   If cloud MCP tools are available (`SHIPLIGHT_API_TOKEN` is set), use the `cloud` skill to fetch environments and test accounts — this can pre-fill the target URL and credentials.
 
 2. **Silent scan** — before asking questions, gather context from what's available:
    - Codebase: routes, components, `package.json`, framework
@@ -345,31 +345,268 @@ Because `intent` drives self-healing, it must be specific enough for an agent to
 - **Use `js:` conditions only for counter/state logic** — e.g., `js: counter++ < 10`, `js: retryCount < 3`. Never use `js:` for DOM inspection like `js: document.querySelector('.modal') !== null`.
 - If you need a JavaScript-based DOM check, use `CODE:` to evaluate it and store the result, or use `VERIFY:` with `js:` (which at least has AI fallback on failure).
 
-### Waiting best practices
+### Waiting syntax
 
-- **Use `WAIT_UNTIL:` for smart waits** — AI checks the condition repeatedly until met or timeout:
+- **`WAIT_UNTIL:`** — AI checks the condition repeatedly until met or timeout. Default timeout is 60 seconds. Each AI check takes 5–10s, so set `timeout_seconds` to at least 15.
+- **`WAIT:`** — fixed-duration pause. Use `seconds:` to set duration.
 
-```yaml
-- WAIT_UNTIL: Dashboard data has finished loading
-  timeout_seconds: 60
-
-- WAIT_UNTIL: Spinner has disappeared
-```
-
-Default timeout is 60 seconds. Each AI condition check takes 10–15 seconds, so set `timeout_seconds` to at least 15. For waits under 10 seconds, use `WAIT:` instead.
-
-- **Use `WAIT:` for short waits (<10s) or when no observable condition exists** (e.g., animations):
-
-```yaml
-- WAIT: Wait for animation to complete
-  seconds: 3
-```
+See [Smart waiting](#smart-waiting) in E2E Test Design for when to use each.
 
 ### General conventions
 
 - Put `intent` first in ACTION statements for readability
 - `xpath` is only needed when an ACTION has neither `locator` nor `js`.
-- Single-test vs Suite: isolated test → single-test file; shared setup/teardown or sequential tests with shared browser state → suite; same structure, different data → `parameters`
+- **Single-test vs Suite vs Parameters:**
+  - **Single-test file** — one isolated test, no shared state
+  - **Suite** — tests that have sequential dependencies (e.g., test A creates a file, test B consumes it). Each test in a suite still covers one journey — the suite just guarantees execution order and shares browser state. Do NOT use suites to bundle unrelated tests.
+  - **Parameters** — same test structure, different data inputs
+
+## E2E Test Design Best Practices
+
+These principles govern *what* to test and *how to structure* tests — independent of the YAML format. Apply them during Phase 2 (Specify) and Phase 4 (Implement).
+
+### Test isolation
+
+Each test must run independently — never depend on another test's side effects, execution order, or leftover state. If a test needs data, it creates that data itself.
+
+```yaml
+# BAD: depends on a previous test having created "My Project"
+test: Delete a project
+steps:
+  - URL: /projects
+  - intent: Click on "My Project"
+    action: click
+    locator: "getByText('My Project')"
+  - intent: Click the Delete button
+    action: click
+    locator: "getByRole('button', { name: 'Delete' })"
+
+# GOOD: creates its own data, then tests the behavior
+test: Delete a project
+steps:
+  - CODE:
+    js: |
+      const res = await page.request.post('/api/projects', {
+        data: { name: 'Delete-Test-' + Date.now() }
+      });
+      const project = await res.json();
+      save_variable('projectName', project.name);
+  - URL: /projects
+  - WAIT_UNTIL: The project list has loaded
+  - intent: Click on the project we just created
+    action: click
+    js: "await page.getByText('{{projectName}}').click()"
+  - intent: Click the Delete button
+    action: click
+    locator: "getByRole('button', { name: 'Delete' })"
+  - VERIFY: The project is no longer visible in the list
+```
+
+### One journey per test
+
+Each test should verify one logical user journey. If step 3 of 8 fails, steps 4-8 give you zero information. Split long flows into focused tests.
+
+**Exception:** Suites allow sequential dependencies between tests (e.g., test A uploads a file, test B downloads it). Each test in a suite still covers one journey — the suite just guarantees order and shares browser state.
+
+```yaml
+# BAD: tests login, settings change, AND deletion in one test
+test: Full user lifecycle
+steps:
+  - intent: Log in
+  - intent: Navigate to settings
+  - intent: Change display name
+  - VERIFY: Name updated
+  - intent: Navigate to account
+  - intent: Delete account
+  - VERIFY: Account deleted
+
+# GOOD: separate tests, each verifiable in isolation
+# File: update-display-name.test.yaml
+test: Update display name from settings
+steps:
+  - URL: /settings
+  - intent: Clear the display name field and type "New Name"
+    action: fill
+    locator: "getByLabel('Display name')"
+    value: "New Name"
+  - intent: Click Save
+    action: click
+    locator: "getByRole('button', { name: 'Save' })"
+  - VERIFY: Success message "Settings saved" is visible
+
+# File: delete-account.test.yaml (separate test)
+test: Delete account from account page
+steps:
+  - URL: /account
+  # ... focused on deletion only
+```
+
+### Assert what users see, not implementation details
+
+Test visible outcomes — text, navigation, enabled/disabled states. Never assert CSS classes, data attributes, internal state, or DOM structure.
+
+```yaml
+# BAD: asserts implementation details
+- VERIFY:
+    js: |
+      const el = await page.locator('.btn-primary');
+      await expect(el).toHaveClass(/disabled/);
+      await expect(el).toHaveAttribute('data-state', 'submitted');
+
+# GOOD: asserts what a user would observe
+- VERIFY: The Submit button is disabled
+    js: |
+      await expect(page.getByRole('button', { name: 'Submit' }))
+        .toBeDisabled({ timeout: 2000 });
+```
+
+### Focused assertions
+
+Verify the *one thing* that proves the feature works. Over-asserting makes tests brittle — they break on cosmetic changes unrelated to the behavior under test.
+
+```yaml
+# BAD: asserts every field on the page — breaks when any label changes
+- VERIFY: Page title is "Dashboard"
+- VERIFY: Welcome message shows username
+- VERIFY: Sidebar has 5 menu items
+- VERIFY: Footer shows current year
+- VERIFY: Avatar image is loaded
+- VERIFY: Notification bell is visible
+
+# GOOD: asserts the one thing that proves the user landed on the dashboard
+- VERIFY: Dashboard page shows the welcome message with the user's name
+```
+
+### Never test third-party services
+
+Don't assert that Stripe's checkout, Google OAuth's consent screen, or Twilio's SMS delivery works. Mock external services at the network boundary. Test *your* integration, not their UI.
+
+```yaml
+# BAD: tests Stripe's UI (will break when Stripe updates their page)
+- intent: Enter card number in Stripe iframe
+- intent: Click Stripe's pay button
+- VERIFY: Stripe shows success checkmark
+
+# GOOD: mock the payment API, test your success handling
+- CODE:
+    js: |
+      await page.route('**/api/payments', route =>
+        route.fulfill({ status: 200, json: { status: 'succeeded', id: 'pi_mock' } })
+      );
+- intent: Click the Pay button
+  action: click
+  locator: "getByRole('button', { name: 'Pay' })"
+- VERIFY: Order confirmation page shows "Payment successful"
+```
+
+### Deterministic test data
+
+Use unique identifiers per test run to avoid collisions. Never rely on hardcoded data that other tests or users might modify.
+
+```yaml
+# BAD: hardcoded name — collides if tests run in parallel or data persists
+- intent: Type "Test User" into the name field
+  action: fill
+  locator: "getByLabel('Name')"
+  value: "Test User"
+
+# GOOD: unique per run — no collisions
+- CODE:
+    js: "save_variable('testName', 'Test-User-' + Date.now());"
+- intent: Type the generated name into the name field
+  action: fill
+  locator: "getByLabel('Name')"
+  text: "{{testName}}"
+```
+
+### Prefer API seeding over UI setup
+
+When a test needs preconditions (a user exists, a project is created), set them up via API calls — not by clicking through the UI. UI setup is slow, flaky, and not what you're testing.
+
+```yaml
+# BAD: 10 UI steps just to set up data before the real test
+- URL: /projects/new
+- intent: Type project name
+- intent: Select team
+- intent: Click Create
+- WAIT_UNTIL: Project page loads
+# ... now the actual test starts
+
+# GOOD: API seed in one step, then test the real behavior
+- CODE:
+    js: |
+      const res = await page.request.post('/api/projects', {
+        data: { name: 'Seed-' + Date.now(), team: 'engineering' }
+      });
+      const { slug } = await res.json();
+      save_variable('projectSlug', slug);
+- URL: /projects/{{projectSlug}}/settings
+- WAIT_UNTIL: Settings page has loaded
+# ... test starts immediately at the point that matters
+```
+
+### Smart waiting
+
+Use the right wait for the situation. `WAIT_UNTIL:` costs 5-10s per check (AI resolution), so it's overkill for short, predictable delays. `WAIT:` is fine when the delay is short and known. The anti-pattern is using `WAIT:` as a *substitute* for condition-based waiting when the delay is unpredictable.
+
+```yaml
+# BAD: guessing how long a data fetch takes — too short in CI, too long locally
+- WAIT: Wait for data to load
+  seconds: 5
+- VERIFY: The table shows results
+
+# GOOD: condition-based wait for unpredictable operations
+- WAIT_UNTIL: The data table has at least one row visible
+  timeout_seconds: 30
+
+# ALSO GOOD: short WAIT for known, fast delays (animations, transitions, debounce)
+- intent: Type search query
+  action: fill
+  locator: "getByRole('searchbox')"
+  value: "test"
+- WAIT: Wait for debounce to fire
+  seconds: 1
+- VERIFY: Search suggestions are visible
+```
+
+Rule of thumb: if the delay is **predictable and under 5s** (animation, debounce, transition), use `WAIT:`. If the delay is **unpredictable** (API call, data loading, file processing), use `WAIT_UNTIL:`.
+
+### Test error states, not just happy paths
+
+Real users hit errors. A test suite that only covers happy paths gives false confidence. For every critical journey, include at least one error/edge case test.
+
+```yaml
+# Covers: empty state, invalid input, network failure
+test: Search handles no results gracefully
+steps:
+  - URL: /search
+  - intent: Type a query that returns no results
+    action: fill
+    locator: "getByRole('searchbox')"
+    value: "zzz_no_match_zzz"
+  - intent: Submit the search
+    action: click
+    locator: "getByRole('button', { name: 'Search' })"
+  - VERIFY: Empty state message "No results found" is displayed
+  - VERIFY: The search box still contains the query (user can refine)
+```
+
+### Design for parallel execution
+
+Tests that modify shared global state (e.g., site-wide settings, the only admin account) can't safely run in parallel. Design around this:
+
+- Use unique, per-test data instead of shared fixtures
+- Avoid tests that change global configuration
+- If a test *must* modify shared state, document it and mark it for serial execution
+
+### Flaky test policy
+
+A test that passes on retry is still broken. Never add retries to mask flakiness — find and fix the root cause:
+
+- **Timing flake?** → Add a proper `WAIT_UNTIL:` for the right condition
+- **Data flake?** → Use unique test data, add proper cleanup
+- **Order flake?** → The test has a hidden dependency on another test — make it self-contained
+- **Environment flake?** → Mock the unstable external service
 
 ## Project Structure
 
