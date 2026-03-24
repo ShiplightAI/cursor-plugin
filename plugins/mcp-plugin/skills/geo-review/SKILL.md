@@ -9,7 +9,7 @@ Evaluate how well your application and content are optimized for AI-powered sear
 
 ## When to use
 
-Use `/shiplight:geo-review` when:
+Use `geo-review` when:
 - Your product is discovered through AI assistants (developer tools, SaaS, APIs)
 - You want to appear in Google AI Overviews
 - Users find your product by asking AI "what's the best X for Y?"

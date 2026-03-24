@@ -9,7 +9,7 @@ Evaluate your application's visual quality and usability against established des
 
 ## When to use
 
-Use `/shiplight:design-review` when:
+Use `design-review` when:
 - Shipping UI without a designer reviewing it
 - Before a launch or demo
 - After significant UI changes or redesigns

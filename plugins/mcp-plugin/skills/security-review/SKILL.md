@@ -9,7 +9,7 @@ Evaluate your application's security posture against industry standards and vali
 
 ## When to use
 
-Use `/shiplight:security-review` when:
+Use `security-review` when:
 - Before launching a new application or feature
 - After adding authentication or authorization changes
 - When handling sensitive data (user credentials, payment info, PII)

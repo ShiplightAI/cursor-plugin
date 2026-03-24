@@ -9,7 +9,7 @@ Evaluate how your application handles personal data — where it's collected, pr
 
 ## When to use
 
-Use `/shiplight:privacy-review` when:
+Use `privacy-review` when:
 - Your app collects any personal information (names, emails, addresses, etc.)
 - Before launching in GDPR/CCPA jurisdictions
 - Adding third-party analytics, tracking, or marketing tools
