@@ -9,7 +9,7 @@ Use the Shiplight MCP browser tools to visually verify that your code changes lo
 
 ## When to use
 
-Use `verify` after making UI changes to confirm they render correctly. This is useful for:
+Use `/verify` after making UI changes to confirm they render correctly. This is useful for:
 - Checking layout, styling, or component changes visually
 - Verifying interactive behavior (clicks, form inputs, navigation)
 - Pre-commit sanity checks on UI work
@@ -17,20 +17,10 @@ Use `verify` after making UI changes to confirm they render correctly. This is u
 
 ## When NOT to use
 
-Skip `verify` when changes don't affect UI rendering:
+Skip `/verify` when changes don't affect UI rendering:
 - Backend-only changes (API logic, database, config)
 - Dependency version bumps with no UI impact
 - Documentation, comments, or test-only changes
-
-## Prerequisites
-
-Ensure the user has at least one LLM API key (`ANTHROPIC_API_KEY` or `GOOGLE_API_KEY`) — these are required for browser actions. If not available, ask:
-
-> To verify UI changes, I need an Anthropic or Google API key. Do you have one?
-
-If provided, append it to the project's `.env` file (create if needed) and tell them: "Saved to `<project>/.env` — make sure `.env` is in your `.gitignore`." The MCP server must be reconnected (`/mcp`) for the new key to take effect.
-
-If the key is already working (e.g. `act` succeeds), skip this step.
 
 ## Steps
 

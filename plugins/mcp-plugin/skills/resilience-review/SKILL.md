@@ -9,7 +9,7 @@ Evaluate how your application behaves when things go wrong — network failures,
 
 ## When to use
 
-Use `resilience-review` when:
+Use `/resilience-review` when:
 - Before launching a user-facing feature
 - After adding new API integrations or data sources
 - When reliability is critical (healthcare, finance, e-commerce checkout)

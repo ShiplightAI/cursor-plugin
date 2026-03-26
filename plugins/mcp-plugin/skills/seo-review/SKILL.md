@@ -9,7 +9,7 @@ Evaluate your application's search engine optimization and discoverability. This
 
 ## When to use
 
-Use `seo-review` when:
+Use `/seo-review` when:
 - Before launching a public-facing website or application
 - After redesigning or migrating a website
 - When organic traffic is a growth channel

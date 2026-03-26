@@ -17,7 +17,7 @@ description: "Review orchestrator: assess your application and recommend the rig
 Three modes:
 
 - **Interactive triage** (default) — asks context questions, recommends a review plan
-- **Full suite** (`review --all`) — runs all applicable categories
+- **Full suite** (`/review --all`) — runs all applicable categories
 - **Targeted** — user invokes a specific review directly
 
 ## Steps
@@ -61,8 +61,8 @@ Provide a decision matrix table:
 
 | Review | Priority | Rationale | Depth |
 |--------|----------|-----------|-------|
-| security-review | CRITICAL | New auth feature + SaaS app | thorough |
-| privacy-review | CRITICAL | Handles user PII, GDPR applies | standard |
+| /security-review | CRITICAL | New auth feature + SaaS app | thorough |
+| /privacy-review | CRITICAL | Handles user PII, GDPR applies | standard |
 | etc. | | | |
 
 ### 4. Execute
@@ -85,14 +85,14 @@ After all reviews complete, generate a unified report:
 
 | Skill | Category | What it checks |
 |-------|----------|---------------|
-| `design-review` | Visual/UI | Responsive, a11y, design consistency, i18n readiness |
-| `security-review` | Security | OWASP Top 10, auth, headers, supply chain, pen testing |
-| `privacy-review` | Privacy | PII handling, tracking, data flow, consent |
-| `compliance-review` | Compliance | HIPAA, SOC2, PCI-DSS, GDPR checklists |
-| `resilience-review` | Reliability | Error handling, degradation, API contracts |
-| `performance-review` | Performance | Core Web Vitals, bundle size, runtime perf |
-| `seo-review` | Discoverability | Meta tags, structured data, crawlability |
-| `geo-review` | AI Discoverability | LLM citation readiness, entity authority, structured claims |
+| `/design-review` | Visual/UI | Responsive, a11y, design consistency, i18n readiness |
+| `/security-review` | Security | OWASP Top 10, auth, headers, supply chain, pen testing |
+| `/privacy-review` | Privacy | PII handling, tracking, data flow, consent |
+| `/compliance-review` | Compliance | HIPAA, SOC2, PCI-DSS, GDPR checklists |
+| `/resilience-review` | Reliability | Error handling, degradation, API contracts |
+| `/performance-review` | Performance | Core Web Vitals, bundle size, runtime perf |
+| `/seo-review` | Discoverability | Meta tags, structured data, crawlability |
+| `/geo-review` | AI Discoverability | LLM citation readiness, entity authority, structured claims |
 
 ## Report Format
 
@@ -100,7 +100,7 @@ All review skills produce reports in a consistent format saved to `shiplight/rep
 
 ## Tips
 
-- Run `review` before every major launch
+- Run `/review` before every major launch
 - Individual reviews can be invoked directly when you know what you need
 - Review reports accumulate over time — the orchestrator can show trends
 - YAML regression tests from reviews accumulate in `shiplight/tests/`

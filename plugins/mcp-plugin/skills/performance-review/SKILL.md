@@ -9,7 +9,7 @@ Measure and evaluate your application's performance against Google's Core Web Vi
 
 ## When to use
 
-Use `performance-review` when:
+Use `/performance-review` when:
 - Before launching or after major feature additions
 - Page load feels slow but you're not sure why
 - Preparing for high-traffic events

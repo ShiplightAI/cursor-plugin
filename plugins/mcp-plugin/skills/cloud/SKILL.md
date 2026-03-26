@@ -428,7 +428,12 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 ### Download test case from cloud
 
 1. Call `get_test_case` with `test_case_id` and `output_format: 'yaml'`
-2. Save the returned YAML to a `.test.yaml` file
+2. **Convert the cloud `url:` to baseURL + relative paths.** Cloud test cases have a top-level `url:` field for the starting URL (e.g., `url: https://app.example.com/dashboard`). Local YAML tests split this into two parts:
+   - **Base URL** — set once in playwright.config.ts at the project level (`use: { baseURL: 'https://app.example.com' }`) if all tests share the same origin, or per-test via `base_url: https://app.example.com`. Prefer project-level.
+   - **Navigation** — use relative paths in the test steps (`URL: /dashboard`).
+
+   Remove the top-level `url:` field from the downloaded YAML, ensure `baseURL` is configured, and convert any absolute URL statements to relative paths.
+3. Save the returned YAML to a `.test.yaml` file
 
 ### Run a test in the cloud and get results
 

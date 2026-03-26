@@ -9,7 +9,7 @@ Evaluate your application against industry-specific regulatory requirements. Thi
 
 ## When to use
 
-Use `compliance-review` when:
+Use `/compliance-review` when:
 - Building applications for regulated industries (healthcare, finance, government)
 - Preparing for a compliance audit (SOC 2, HIPAA, PCI-DSS)
 - Adding payment processing or health data features
@@ -141,7 +141,7 @@ Applicable when: application processes, stores, or transmits cardholder data.
 
 ### GDPR Technical Requirements (GDPR)
 
-Applicable when: application handles EU personal data. (Note: privacy-specific checks are in `privacy-review` — this section covers GDPR's technical/compliance obligations.)
+Applicable when: application handles EU personal data. (Note: privacy-specific checks are in `/privacy-review` — this section covers GDPR's technical/compliance obligations.)
 
 | Check ID | Check | GDPR Article | Method |
 |----------|-------|-------------|--------|
@@ -261,6 +261,6 @@ Save all YAML tests to `shiplight/tests/compliance-review.test.yaml`.
 - Compliance requires evidence — use `record_evidence: true` and `generate_html_report` for audit documentation
 - YAML regression tests from this review serve as continuous compliance monitoring
 - This review covers technical requirements only — organizational requirements (policies, training) need human review
-- For privacy-specific concerns, complement with `privacy-review`
-- For security-specific concerns, complement with `security-review`
+- For privacy-specific concerns, complement with `/privacy-review`
+- For security-specific concerns, complement with `/security-review`
 - Close session with `close_session` and use `generate_html_report` for evidence

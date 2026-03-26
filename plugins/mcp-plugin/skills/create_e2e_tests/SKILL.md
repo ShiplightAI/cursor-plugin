@@ -9,7 +9,7 @@ A spec-driven workflow that front-loads testing expertise through structured pla
 
 ## When to use
 
-Use `create_e2e_tests` when the user wants to:
+Use `/create_e2e_tests` when the user wants to:
 - Create a new local test project from scratch
 - Add YAML tests for a web application
 - Set up authentication for a test project
@@ -58,7 +58,7 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 
 1. **Get project path** — ask where to create the test project (e.g., `./my-tests`). All artifacts and tests will live here. Create the `test-specs/` directory.
 
-   If cloud MCP tools are available (`SHIPLIGHT_API_TOKEN` is set), use the `cloud` skill to fetch environments and test accounts — this can pre-fill the target URL and credentials.
+   If cloud MCP tools are available (`SHIPLIGHT_API_TOKEN` is set), use the `/cloud` skill to fetch environments and test accounts — this can pre-fill the target URL and credentials.
 
 2. **Silent scan** — before asking questions, gather context from what's available:
    - Codebase: routes, components, `package.json`, framework
@@ -163,7 +163,19 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 
 Skip any steps already done (project exists, deps installed, auth configured).
 
-1. **Check API keys** — ensure the user has `ANTHROPIC_API_KEY` or `GOOGLE_API_KEY` for browser actions. If not available, ask for one and save to `.env`.
+1. **Configure AI provider** — check if the test project already has a `.env` with an AI API key. If not, ask the user to choose a provider:
+
+   > To run YAML tests, I need an AI provider for resolving test steps. Which provider would you like to use?
+   >
+   > A) **Google AI** — `GOOGLE_API_KEY` ([Get key](https://aistudio.google.com/app/apikey)) — default model: `gemini-3.1-flash-lite-preview`
+   > B) **Anthropic** — `ANTHROPIC_API_KEY` ([Get key](https://console.anthropic.com/settings/keys)) — default model: `claude-haiku-4-5`
+   > C) **OpenAI** — `OPENAI_API_KEY` ([Get key](https://platform.openai.com/api-keys)) — default model: `gpt-5.4-mini`
+   > D) **Azure OpenAI** — requires `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT` — set `WEB_AGENT_MODEL=azure:<deployment>`
+   > E) **AWS Bedrock** — uses AWS credential chain — set `WEB_AGENT_MODEL=bedrock:<model_id>`
+   > F) **Google Vertex AI** — uses GCP Application Default Credentials — set `WEB_AGENT_MODEL=vertex:<model>`
+   > G) **I already have it configured**
+
+   After the user chooses, ask for their API key and save it to the test project's `.env` file. For A/B/C, the model is auto-detected from the key. For D/E/F, also save `WEB_AGENT_MODEL` with the appropriate `provider:model` prefix. Optionally, the user can set `WEB_AGENT_MODEL` to override the default model (e.g., `WEB_AGENT_MODEL=claude-sonnet-4-6`).
 
 2. **Scaffold the project** — call `scaffold_project` with the absolute project path. This creates `package.json`, `playwright.config.ts`, `.env.example`, `.gitignore`, and `tests/`. Save the API key to `.env`.
 
@@ -196,11 +208,7 @@ Skip any steps already done (project exists, deps installed, auth configured).
 
    Standard variable names: `username`, `password`, `otp_secret_key`. Use `{ value, sensitive: true }` for secrets. Add values to `.env`.
 
-   Write `auth.setup.ts` with standard Playwright login code. For TOTP:
-   ```ts
-   import { authenticator } from 'otplib';
-   const code = authenticator.generate(process.env.MY_APP_TOTP_SECRET!);
-   ```
+   Write `auth.setup.ts` with standard Playwright login code. For TOTP, implement RFC 6238 using `node:crypto` (HMAC-SHA1 + base32 decode) — no third-party dependency needed.
 
    **Verify auth before proceeding.** Run `npx shiplight test --headed` to execute the auth setup and confirm it saves `storage-state.json`. If it fails, escalate to the user — auth is a prerequisite for everything else.
 
