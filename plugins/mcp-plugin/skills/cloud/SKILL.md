@@ -1,11 +1,11 @@
 ---
 name: cloud
-description: "Sync local test cases, templates, and functions with Shiplight cloud. Manage test runs, environments, folders, and accounts."
+description: "Sync local test cases, templates, and functions with Shiplight cloud. Manage test runs, environments, folders, suites, and accounts."
 ---
 
 # Shiplight Cloud
 
-Sync local YAML test cases, templates, and TypeScript functions with the Shiplight cloud using MCP tools. Manage test runs, environments, folders, and accounts via the REST API.
+Sync local YAML test cases, templates, and TypeScript functions with the Shiplight cloud using MCP tools. Manage test runs, environments, folders, suites, and accounts via the REST API.
 
 ## Setup
 
@@ -76,45 +76,6 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 ```
 
 **Response:** `{ id, title, test_flow, folder_id }`
-
-#### Update Test Case (partial)
-
-For partial updates that don't involve `test_flow` (e.g. renaming):
-
-```bash
-curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Updated Login Flow"}' \
-  https://api.shiplight.ai/v1/test-cases/123
-```
-
-**Request body:** (all fields optional)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `title` | string | New title |
-| `test_flow` | object | Updated TestFlow JSON object (use `save_test_case` MCP tool instead for YAML sources) |
-| `folder_id` | number | Move to a different folder |
-
-#### Run Test Case
-
-Triggers cloud execution. Returns a `test_run_id` for polling.
-
-```bash
-curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"trigger": "API", "environment": {"id": 1}}' \
-  https://api.shiplight.ai/v1/test-run/test-case/123
-```
-
-**Request body:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `trigger` | string | yes | Always `"API"` |
-| `environment` | `{ id: number }` | no | Environment to run against (uses test case default if omitted) |
-
-**Response:** `{ id, status, result, test_case_result_ids }`
 
 ---
 
@@ -209,40 +170,6 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** array of `{ id, name, value, environment_id, is_sensitive }`
 
-#### Create Variable
-
-```bash
-curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "username", "value": "testuser@example.com", "environmentId": 1}' \
-  https://api.shiplight.ai/v1/variables
-```
-
-For sensitive values:
-
-```bash
-curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "password", "value": "secret123", "environmentId": 1, "isSensitive": true}' \
-  https://api.shiplight.ai/v1/variables
-```
-
-#### Update Variable
-
-```bash
-curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"value": "new-value"}' \
-  https://api.shiplight.ai/v1/variables/42
-```
-
-#### Delete Variable
-
-```bash
-curl -X DELETE -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  https://api.shiplight.ai/v1/variables/42
-```
-
 ---
 
 ### Test Accounts
@@ -266,34 +193,6 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 ```
 
 **Response:** `{ id, name, username, password, environmentId, loginConfig }`
-
-#### Create Test Account
-
-```bash
-curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "testuser@example.com",
-    "password": "secret123",
-    "name": "Test User",
-    "environmentId": 1,
-    "loginConfig": {
-      "site_url": "https://app.example.com/login",
-      "account": { "username": "testuser@example.com", "password": "secret123" }
-    }
-  }' \
-  https://api.shiplight.ai/v1/test-accounts
-```
-
-**Request body:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `username` | string | yes | Account username/email |
-| `password` | string | yes | Account password |
-| `name` | string | no | Display name |
-| `environmentId` | number | yes | Environment this account belongs to |
-| `loginConfig` | object | no | Login automation config (`site_url` + `account` credentials) |
 
 ---
 
@@ -330,22 +229,42 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** `{ id, name, description, parentId, pathIds }`
 
-#### Create Folder
+---
+
+### Test Suites
+
+Test suites group test cases for organized execution. Use suites to manage which test cases run together.
+
+#### List All Suites
 
 ```bash
-curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Regression Tests", "description": "Weekly regression suite", "parentId": null}' \
-  https://api.shiplight.ai/v1/test-folders
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/test-suites
 ```
 
-**Request body:**
+**Response:** array of `{ id, title, description, testCount, createdAt, updatedAt }`
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | yes | Folder name |
-| `description` | string | no | Folder description |
-| `parentId` | number \| null | no | Parent folder ID (`null` for root) |
+#### Get Suite
+
+Returns suite metadata and its test cases. **Always use `?fields=` to select only the columns you need** — without it, the endpoint returns full test case entities which is too expensive.
+
+`?fields=` accepts a comma-separated list of columns: `id`, `title`, `description`, `status`, `folder_id`, `test_type`, `created_at`, `updated_at`, `url`, `tags`
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  "https://api.shiplight.ai/v1/test-suites/1?fields=id,title,status"
+```
+
+**Response:**
+```json
+{
+  "suite": { "id": 1, "title": "Smoke Tests", "description": "...", "testCount": 5 },
+  "testCases": [
+    { "id": 101, "title": "Login flow", "status": "Active" },
+    { "id": 102, "title": "Search", "status": "Active" }
+  ]
+}
+```
 
 ---
 
@@ -361,25 +280,6 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 ```
 
 **Response:** `{ id, name, description, statements }`
-
-#### Update Template (partial)
-
-For partial updates that don't involve `statements` (e.g. renaming):
-
-```bash
-curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "dismiss-popup", "description": "Updated description"}' \
-  https://api.shiplight.ai/v1/reusable-steps/138
-```
-
-**Request body:** (all fields optional)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `name` | string | Template name |
-| `description` | string | What the template does |
-| `statements` | array | Statement objects (use `save_template` MCP tool instead for YAML sources) |
 
 ---
 
@@ -419,11 +319,10 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 ### Sync local project to cloud
 
-1. **Sync environment variables:** read `variables` from `playwright.config.ts`. List existing cloud variables with `GET /v1/variables?environmentId=<id>` first — create only variables that don't exist yet (`POST`), update ones that do (`PUT`). This avoids duplicates on repeated syncs.
-2. **Sync test accounts:** call `save_test_account` with credentials and `storage_state_path` (if the local project uses storageState-based auth)
-3. **Sync test cases:** find all `.test.yaml` files, call `save_test_case` with `file_path` for each. If the file already has a `test_case_id`, it updates; if not, it creates and returns an ID.
-4. **Track IDs:** add the returned `test_case_id` to the YAML if not already present
-5. **Sync templates and functions:** repeat with `save_template` and `save_function`
+1. **Sync test accounts:** call `save_test_account` with credentials and `storage_state_path` (if the local project uses storageState-based auth)
+2. **Sync test cases:** find all `.test.yaml` files, call `save_test_case` with `file_path` for each. If the file already has a `test_case_id`, it updates; if not, it creates and returns an ID.
+3. **Track IDs:** add the returned `test_case_id` to the YAML if not already present
+4. **Sync templates and functions:** repeat with `save_template` and `save_function`
 
 ### Download test case from cloud
 
@@ -434,13 +333,6 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
    Remove the top-level `url:` field from the downloaded YAML, ensure `baseURL` is configured, and convert any absolute URL statements to relative paths.
 3. Save the returned YAML to a `.test.yaml` file
-
-### Run a test in the cloud and get results
-
-1. `POST /v1/test-run/test-case/<id>` → triggers run, returns `{ id, test_case_result_ids }`
-2. Poll `GET /run-results/<run_id>` every 10-15s until `testRun.status === "COMPLETED"` (**no `/v1/` prefix**)
-3. `GET /test-case-results/<result_id>` → get `result`, `duration`, `error`, `video`, `trace` (**no `/v1/` prefix**)
-4. If failed: check `error` field. Download artifacts with `GET /v1/s3/file?uri=<S3_URI>`
 
 ### Download test artifacts
 
