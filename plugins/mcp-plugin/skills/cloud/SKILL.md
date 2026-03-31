@@ -77,6 +77,32 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** `{ id, title, test_flow, folder_id }`
 
+#### Delete Test Case (soft delete)
+
+Marks the test case and its results as deleted (soft delete — records are retained but hidden from queries).
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/test-cases/123
+```
+
+**Response:** `{ success: true, message: "Test case deleted" }`
+
+#### Move Test Cases to Folder
+
+Batch-update the folder assignment for multiple test cases. Set `folder_id` to `null` to move to root.
+
+```bash
+curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"test_ids": [101, 102], "folder_id": 5}' \
+  https://api.shiplight.ai/v1/test-cases/batch-update-folder
+```
+
+**Body:** `{ test_ids: number[], folder_id: number | null }`
+
+**Response:** `{ success: true, data: [/* updated test cases */], message: "Successfully updated 2 test cases" }`
+
 ---
 
 ### Test Runs
@@ -117,6 +143,50 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   ]
 }
 ```
+
+#### Trigger Test Run
+
+Run a test case, test suite, or a combination in the cloud.
+
+**By test case:**
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"trigger": "API"}' \
+  https://api.shiplight.ai/v1/test-run/test-case/123
+```
+
+**By test suite:**
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"trigger": "API"}' \
+  https://api.shiplight.ai/v1/test-run/test-suite/1
+```
+
+**Generic (multiple test cases and/or suites):**
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"trigger": "API", "test_case_ids": [101, 102], "test_suite_ids": [1]}' \
+  https://api.shiplight.ai/v1/test-run
+```
+
+**Body (all trigger endpoints):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `trigger` | string | Required. Use `"API"` |
+| `test_case_ids` | number[] | Generic endpoint only — test case IDs to run |
+| `test_suite_ids` | number[] | Generic endpoint only — test suite IDs to run |
+| `environment` | `{ id?: string }` | Override environment |
+
+**Response (201):** test run object with `{ id, status, result, ... }`
+
+After triggering, poll `GET /v1/test-runs?limit=1` or `GET /run-results/<id>` to check status.
 
 #### Get Test Case Result
 
@@ -229,6 +299,56 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 **Response:** `{ id, name, description, parentId, pathIds }`
 
+#### Create Folder
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Smoke Tests", "parentId": 1}' \
+  https://api.shiplight.ai/v1/test-folders
+```
+
+**Body:** `{ name: string, description?: string, parentId?: number | null }`
+
+**Response (201):** `{ success: true, data: { id, name, description, parentId } }`
+
+#### Update Folder
+
+```bash
+curl -X PATCH -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Regression Tests"}' \
+  https://api.shiplight.ai/v1/test-folders/1
+```
+
+**Body:** `{ name?: string, description?: string }`
+
+**Response:** `{ success: true, data: { id, name, description } }`
+
+#### Delete Folder
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/test-folders/1
+```
+
+**Response:** `{ success: true }`
+
+#### Move Folder
+
+Move a folder to a different parent. Set `parentId` to `null` to move to root.
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"parentId": 5}' \
+  https://api.shiplight.ai/v1/test-folders/1/move
+```
+
+**Body:** `{ parentId: number | null }`
+
+**Response:** `{ success: true }`
+
 ---
 
 ### Test Suites
@@ -265,6 +385,67 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   ]
 }
 ```
+
+#### Create Suite
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Smoke Tests", "description": "Core user flows"}' \
+  https://api.shiplight.ai/v1/test-suites
+```
+
+**Body:** `{ title: string, description?: string }`
+
+**Response (201):** `{ id, title, description, createdAt, updatedAt }`
+
+#### Update Suite
+
+```bash
+curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Regression Tests"}' \
+  https://api.shiplight.ai/v1/test-suites/1
+```
+
+**Body:** `{ title?: string, description?: string }`
+
+**Response:** `{ success: true, message: "Test suite updated successfully" }`
+
+#### Delete Suite
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/test-suites/1
+```
+
+**Response:** `{ success: true, message: "Test suite deleted" }`
+
+#### Add Test Cases to Suite
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"testCaseIds": [101, 102, 103]}' \
+  https://api.shiplight.ai/v1/test-suites/1/test-cases
+```
+
+**Body:** `{ testCaseIds: number[] }`
+
+**Response:** `{ success: true, message: "Test cases added to suite successfully" }`
+
+#### Remove Test Cases from Suite
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"testCaseIds": [101]}' \
+  https://api.shiplight.ai/v1/test-suites/1/test-cases
+```
+
+**Body:** `{ testCaseIds: number[] }`
+
+**Response:** `{ success: true, message: "Test cases removed from suite successfully" }`
 
 ---
 
