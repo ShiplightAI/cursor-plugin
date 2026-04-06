@@ -66,7 +66,20 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/test-cases
 ```
 
-**Response:** array of `{ id, title, test_flow, folder_id }`
+**Query parameters:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `ids` | string | Comma-separated test case IDs |
+| `folderId` | number | Filter by exact folder |
+| `folderIdRecursive` | number | Filter by folder and all descendants |
+| `labelIds` | string | Comma-separated label IDs (OR logic — matches test cases with ANY of the labels) |
+| `createdBy` | string | Filter by creator user ID |
+| `orderBy` | string | Order by field (default: `"id"`) |
+| `order` | `asc` \| `desc` | Order direction (default: `"desc"`) |
+| `limit` | number | Max results to return |
+
+**Response:** `{ data: [{ id, title, test_flow, folder_id, ... }], count: number }`
 
 #### Get Test Case
 
@@ -166,12 +179,21 @@ curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   https://api.shiplight.ai/v1/test-run/test-suite/1
 ```
 
-**Generic (multiple test cases and/or suites):**
+**Generic (multiple test cases, suites, and/or labels):**
 
 ```bash
 curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"trigger": "API", "test_case_ids": [101, 102], "test_suite_ids": [1]}' \
+  https://api.shiplight.ai/v1/test-run
+```
+
+**By labels (run all test cases with any of the specified labels):**
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"trigger": "API", "label_ids": [22, 18]}' \
   https://api.shiplight.ai/v1/test-run
 ```
 
@@ -182,6 +204,7 @@ curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 | `trigger` | string | Required. Use `"API"` |
 | `test_case_ids` | number[] | Generic endpoint only — test case IDs to run |
 | `test_suite_ids` | number[] | Generic endpoint only — test suite IDs to run |
+| `label_ids` | number[] | Generic endpoint only — label IDs; resolves to test cases with ANY of these labels (OR logic). Can be combined with `test_case_ids` and `test_suite_ids` |
 | `environment` | `{ id?: string }` | Override environment |
 
 **Response (201):** test run object with `{ id, status, result, ... }`
@@ -368,7 +391,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 Returns suite metadata and its test cases. **Always use `?fields=` to select only the columns you need** — without it, the endpoint returns full test case entities which is too expensive.
 
-`?fields=` accepts a comma-separated list of columns: `id`, `title`, `description`, `status`, `folder_id`, `test_type`, `created_at`, `updated_at`, `url`, `tags`
+`?fields=` accepts a comma-separated list of columns: `id`, `title`, `description`, `status`, `folder_id`, `test_type`, `created_at`, `updated_at`, `url`
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
@@ -446,6 +469,92 @@ curl -X DELETE -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 **Body:** `{ testCaseIds: number[] }`
 
 **Response:** `{ success: true, message: "Test cases removed from suite successfully" }`
+
+---
+
+### Labels
+
+Labels let you tag test cases (e.g., `daily-regression`, `pre-merge`) and trigger runs by label instead of manually managing suites.
+
+#### List Labels
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/labels
+```
+
+**Response:** `{ success: true, data: [{ id, name, color, organizationId, createdAt, updatedAt }] }`
+
+#### Create Label
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "daily-regression", "color": "#4CAF50"}' \
+  https://api.shiplight.ai/v1/labels
+```
+
+**Body:** `{ name: string, color: string }`
+
+**Response (201):** `{ success: true, data: { id, name, color } }`
+
+#### Update Label
+
+```bash
+curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "nightly-regression"}' \
+  https://api.shiplight.ai/v1/labels/22
+```
+
+**Body:** `{ name?: string, color?: string }`
+
+#### Delete Label
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/labels/22
+```
+
+#### Add Labels to Test Case
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"labelIds": [22, 18]}' \
+  https://api.shiplight.ai/v1/labels/test-case/123/add
+```
+
+**Body:** `{ labelIds: number[] }`
+
+#### Remove Labels from Test Case
+
+```bash
+curl -X POST -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"labelIds": [22]}' \
+  https://api.shiplight.ai/v1/labels/test-case/123/remove
+```
+
+**Body:** `{ labelIds: number[] }`
+
+#### Get Labels for Test Case
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/labels/test-case/123
+```
+
+**Response:** `{ success: true, data: [{ id, name, color }] }`
+
+#### Get Test Case IDs by Label
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/labels/test-cases/22
+```
+
+**Response:** `{ success: true, data: [101, 102, 103] }`
 
 ---
 
