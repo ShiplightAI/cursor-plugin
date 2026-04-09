@@ -80,7 +80,7 @@ else
 fi
 
 # --- Skills ---
-SKILLS="verify create_e2e_tests cloud review design-review security-review privacy-review compliance-review resilience-review performance-review seo-review geo-review"
+SKILLS="verify create_e2e_tests cloud triage review design-review security-review privacy-review compliance-review resilience-review performance-review seo-review geo-review"
 
 for skill in $SKILLS; do
   SKILL_FILE="$TARGET/.cursor/skills/$skill/SKILL.md"
