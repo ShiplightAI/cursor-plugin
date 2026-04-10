@@ -2,7 +2,7 @@
   "name": "shiplight-mcp",
   "displayName": "Shiplight MCP",
   "version": "1.0.0",
-  "description": "Adds /verify, /create_e2e_tests, /cloud, and 9 review skills (review, design-review, security-review, privacy-review, compliance-review, resilience-review, performance-review, seo-review, geo-review) for browser testing, test generation, and code review",
+  "description": "Adds /verify, /create_e2e_tests, /triage, /cloud, and 9 review skills (review, design-review, security-review, privacy-review, compliance-review, resilience-review, performance-review, seo-review, geo-review) for browser testing, test generation, test failure triage, and code review",
   "author": {
     "name": "Shiplight AI"
   },
