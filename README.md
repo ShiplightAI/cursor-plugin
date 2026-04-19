@@ -1,42 +1,30 @@
-# Shiplight Cursor Plugin
+# Shiplight Cursor Plugin (deprecated)
 
-AI-powered test automation for Cursor — ship with confidence by letting the agent verify, test, and iterate autonomously.
+> **This repo is deprecated.** Skills and MCP installation have moved to [ShiplightAI/agent-skills](https://github.com/ShiplightAI/agent-skills), which supports Cursor and 40+ other coding agents from a single source.
 
-## Features
+## Migrate
 
-- **MCP tools** — gives Cursor a real browser so it can autonomously code, verify in the browser, and iterate — closing the loop without human intervention
-- **Skills** — commands that cover the full test lifecycle and code review:
-  - `/verify` — visually confirm UI changes in the browser after a code change
-  - `/create_e2e_tests` — generate e2e regression tests from code changes or app exploration
-  - `/triage` — reproduce failing E2E tests, diagnose root causes, fix YAML tests, and report application bugs
-  - `/cloud` — sync and share regression tests on the cloud platform for scheduled runs, team collaboration, and CI integration
-  - `/review` — general code review covering correctness, readability, and maintainability
-  - `/design-review` — review architecture and design patterns
-  - `/security-review` — review for security vulnerabilities and best practices
-  - `/privacy-review` — review for privacy concerns and data handling
-  - `/compliance-review` — review for regulatory and compliance requirements
-  - `/resilience-review` — review for fault tolerance and error handling
-  - `/performance-review` — review for performance bottlenecks and optimization
-  - `/seo-review` — review for SEO best practices
-  - `/geo-review` — review for internationalization and localization
-
-## Install
+Install skills and the MCP server in one step:
 
 ```bash
-git clone https://github.com/ShiplightAI/cursor-plugin.git
-cd cursor-plugin
-bash install.sh                                        # Install to current directory
-bash install.sh --user                                 # Install to user-level (~/.cursor)
-bash install.sh --project ~/my-project                  # Install to a specific project
+npx -y skills add ShiplightAI/agent-skills -a cursor -y && \
+npx -y add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console -a cursor -y
 ```
 
-Restart Cursor after setup.
+Cursor disables newly-added MCP servers by default. Enable it: **Cursor → Settings… → Cursor Settings → Tools & MCPs → Installed MCP Servers → shiplight (Disabled)** — toggle the switch to enable. Restart Cursor.
 
-## Verify Installation
+Full install guide: [docs.shiplight.ai quick start](https://docs.shiplight.ai/getting-started/quick-start).
 
-Go to **Cursor Settings** (Cmd+Shift+J) → **MCP** to confirm the Shiplight MCP server is registered. Skills `/verify`, `/create_e2e_tests`, `/triage`, `/cloud`, and the review skills should be available in Cursor chat.
+## Why this moved
+
+The Claude Code / Cursor / Codex plugin repos have been consolidated into a single source of truth. The [`skills`](https://www.npmjs.com/package/skills) CLI installs skills across 40+ agents; [`add-mcp`](https://www.npmjs.com/package/add-mcp) installs the MCP server. One update reaches every supported agent.
+
+## Existing installs
+
+The old `bash install.sh` flow still works, but it won't receive new skills or fixes. Re-install with the commands above to stay current.
 
 ## Links
 
 - [Shiplight](https://shiplight.ai)
 - [Documentation](https://docs.shiplight.ai)
+- [New skills repo](https://github.com/ShiplightAI/agent-skills)
